@@ -9,6 +9,15 @@ export default defineConfig({
     outDir: '../backend/static',
     emptyOutDir: true,
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:443',
+        changeOrigin: true,
+        secure: false, // Accept self-signed certificate
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
   },

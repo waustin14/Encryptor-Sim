@@ -56,9 +56,9 @@ development_status:
   epic-2-retrospective: optional
 
   epic-3: in-progress
-  3-1-default-admin-login: in-progress
-  3-2-forced-password-change-on-first-login: backlog
-  3-3-https-with-tls-1-2-self-signed-cert: backlog
+  3-1-default-admin-login: done
+  3-2-forced-password-change-on-first-login: done
+  3-3-https-with-tls-1-2-self-signed-cert: in-progress
   3-4-api-authentication-with-jwt: backlog
   epic-3-retrospective: optional
 
