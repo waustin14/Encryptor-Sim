@@ -1,0 +1,81 @@
+# generated: 2026-01-24 18:47
+# project: Encryptor-Sim-BMAD
+# project_key: encryptor-sim
+# tracking_system: file-system
+# story_location: /Users/will/Documents/Projects/Encryptor-Sim-BMAD/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-24 18:47
+project: Encryptor-Sim-BMAD
+project_key: encryptor-sim
+tracking_system: file-system
+story_location: /Users/will/Documents/Projects/Encryptor-Sim-BMAD/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-initialize-project-from-starter-template: done
+  1-2-enforce-isolation-rules-and-secure-psks: done
+  1-3-isolation-validation-on-startup-with-ui-status: done
+  1-4-security-testing-and-published-report: in-progress
+  epic-1-retrospective: optional
+
+  epic-2: in-progress
+  2-1-deploy-qcow2-appliance-in-cml: done
+  2-2-boot-with-required-services-running: done
+  2-3-mgmt-interface-dhcp-initialization: done
+  2-4-serial-console-mgmt-configuration: done
+  2-5-boot-health-indicator-via-api: done
+  epic-2-retrospective: optional
+
+  epic-3: in-progress
+  3-1-default-admin-login: in-progress
+  3-2-forced-password-change-on-first-login: backlog
+  3-3-https-with-tls-1-2-self-signed-cert: backlog
+  3-4-api-authentication-with-jwt: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-configure-and-view-interface-settings: backlog
+  4-2-add-ipsec-peer: backlog
+  4-3-delete-ipsec-peer: backlog
+  4-4-add-route-for-a-peer: backlog
+  4-5-delete-route: backlog
+  4-6-confirm-peer-operational-state: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-tunnel-status-and-interface-statistics: backlog
+  5-2-dynamically-add-tunnels: backlog
+  5-3-dynamically-remove-tunnels: backlog
+  5-4-validate-tunnel-traffic-flow: backlog
+  5-5-operational-rest-api-for-automation: backlog
+  5-6-complete-api-and-user-documentation: backlog
+  epic-5-retrospective: optional

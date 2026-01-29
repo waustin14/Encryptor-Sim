@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Encryptor-Sim-BMAD — Color Themes</title>
+  <style>
+    :root {
+      --primary: #1f5ea8;
+      --primary-dark: #174a84;
+      --accent: #2aa39a;
+      --bg: #f7f9fc;
+      --surface: #ffffff;
+      --border: #e3e8ef;
+      --text: #0f172a;
+      --text-2: #475569;
+      --success: #14804a;
+      --warning: #b45309;
+      --error: #b42318;
+      --info: #2563eb;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header { padding: 32px 24px 12px; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); }
+    .lede { color: var(--text-2); max-width: 900px; }
+    .grid { display: grid; gap: 16px; padding: 24px; }
+    .swatches { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .swatch {
+      border-radius: 12px;
+      height: 64px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .label { font-size: 12px; color: var(--text-2); }
+    .value { font-weight: 600; }
+    .preview {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      background: var(--surface);
+      display: grid;
+      gap: 12px;
+    }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: 1px solid var(--primary);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn.secondary {
+      background: #fff;
+      color: var(--primary);
+    }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.success { background: #dcfce7; color: #166534; }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .badge.error { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Encryptor-Sim-BMAD — Color Theme</h1>
+    <p class="lede">Calm, trustworthy palette aligned with Meraki simplicity and Stripe-level clarity.</p>
+  </header>
+
+  <section class="grid swatches">
+    <div class="card"><div class="swatch" style="background:#1f5ea8"></div><div class="label">Primary</div><div class="value">#1F5EA8</div></div>
+    <div class="card"><div class="swatch" style="background:#174a84"></div><div class="label">Primary Dark</div><div class="value">#174A84</div></div>
+    <div class="card"><div class="swatch" style="background:#2aa39a"></div><div class="label">Accent</div><div class="value">#2AA39A</div></div>
+    <div class="card"><div class="swatch" style="background:#f7f9fc"></div><div class="label">Background</div><div class="value">#F7F9FC</div></div>
+    <div class="card"><div class="swatch" style="background:#ffffff"></div><div class="label">Surface</div><div class="value">#FFFFFF</div></div>
+    <div class="card"><div class="swatch" style="background:#e3e8ef"></div><div class="label">Border/Divider</div><div class="value">#E3E8EF</div></div>
+    <div class="card"><div class="swatch" style="background:#0f172a"></div><div class="label">Text Primary</div><div class="value">#0F172A</div></div>
+    <div class="card"><div class="swatch" style="background:#475569"></div><div class="label">Text Secondary</div><div class="value">#475569</div></div>
+    <div class="card"><div class="swatch" style="background:#14804a"></div><div class="label">Success</div><div class="value">#14804A</div></div>
+    <div class="card"><div class="swatch" style="background:#b45309"></div><div class="label">Warning</div><div class="value">#B45309</div></div>
+    <div class="card"><div class="swatch" style="background:#b42318"></div><div class="label">Error</div><div class="value">#B42318</div></div>
+    <div class="card"><div class="swatch" style="background:#2563eb"></div><div class="label">Info</div><div class="value">#2563EB</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="preview">
+      <strong>UI Preview</strong>
+      <div style="color: var(--text-2);">Configuration update saved successfully.</div>
+      <div>
+        <button class="btn">Save Changes</button>
+        <button class="btn secondary">Cancel</button>
+      </div>
+      <div>
+        <span class="badge success">UP</span>
+        <span class="badge warn">NEGOT</span>
+        <span class="badge error">DOWN</span>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

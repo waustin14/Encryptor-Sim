@@ -1,0 +1,212 @@
+#!/sbin/openrc-run
+# OpenRC service: encryptor-api
+# FastAPI backend for the Encryptor Simulator web UI
+#
+# This service runs in the MGMT namespace for network isolation,
+# ensuring the API is only accessible from the management interface.
+# It communicates with the privileged daemon via Unix socket IPC.
+#
+# HTTPS is enforced using self-signed TLS certificate.
+
+name="encryptor-api"
+description="Encryptor Simulator REST API (HTTPS)"
+
+# TLS certificate paths
+SSL_CERTFILE="/etc/encryptor-sim/tls/server.crt"
+SSL_KEYFILE="/etc/encryptor-sim/tls/server.key"
+
+# Run API in MGMT namespace for isolation with HTTPS on port 443
+# Port 443 requires root, so we stay as root but uvicorn runs the app
+command="/sbin/ip"
+command_args="netns exec ns_mgmt /usr/bin/python3 /opt/encryptor-sim/backend/uvicorn_server.py"
+command_background="yes"
+start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
+
+directory="/opt/encryptor-sim/backend"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/encryptor-sim/api.log"
+error_log="/var/log/encryptor-sim/api.error.log"
+
+# Environment variables (exported for the subprocess)
+export ENCRYPTOR_ENV="production"
+export ENCRYPTOR_DB_PATH="/var/lib/encryptor-sim/encryptor.db"
+export ENCRYPTOR_DAEMON_SOCKET="/run/encryptor-sim/daemon.sock"
+export APP_DAEMON_SOCKET_PATH="/run/encryptor-sim/daemon.sock"
+export APP_SSL_CERTFILE="${SSL_CERTFILE}"
+export APP_SSL_KEYFILE="${SSL_KEYFILE}"
+export PYTHONPATH="/opt/encryptor-sim"
+
+# Dependencies
+depend() {
+    need encryptor-daemon
+    after networking encryptor-namespaces
+}
+
+start_pre() {
+    if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        rm -f "$pidfile"
+    fi
+
+    # Load PSK encryption key for API settings
+    if [ -f /etc/encryptor-sim/psk.key ]; then
+        export APP_PSK_ENCRYPTION_KEY="$(cat /etc/encryptor-sim/psk.key)"
+    else
+        eerror "PSK encryption key not found at /etc/encryptor-sim/psk.key"
+        return 1
+    fi
+
+    # Ensure application group exists
+    if ! getent group encryptor >/dev/null 2>&1; then
+        einfo "Creating encryptor group"
+        addgroup -S encryptor || { eerror "Failed to create encryptor group"; return 1; }
+    fi
+
+    # Ensure application user exists
+    if ! id -u encryptor >/dev/null 2>&1; then
+        einfo "Creating encryptor user"
+        adduser -D -H -s /sbin/nologin -G encryptor encryptor || { eerror "Failed to create encryptor user"; return 1; }
+    fi
+
+    # Ensure log directory exists with correct permissions
+    checkpath --directory --owner encryptor:encryptor --mode 0755 /var/log/encryptor-sim
+
+    # Ensure data directory exists with correct permissions
+    checkpath --directory --owner encryptor:encryptor --mode 0750 /var/lib/encryptor-sim
+
+    # Ensure frontend build exists
+    if [ ! -f /opt/encryptor-sim/backend/static/index.html ]; then
+        eerror "Frontend build missing: /opt/encryptor-sim/backend/static/index.html"
+        return 1
+    fi
+
+    # Verify daemon socket is available
+    if [ ! -S /run/encryptor-sim/daemon.sock ]; then
+        ewarn "Daemon socket not found, daemon may not be running"
+    fi
+
+    # Enforce HTTPS-only on MGMT by failing if HTTP listener exists
+    if command -v ss >/dev/null 2>&1; then
+        if ip netns exec ns_mgmt ss -ltn "sport = :80" 2>/dev/null | grep -q ":80"; then
+            eerror "HTTP listener detected on port 80 in ns_mgmt"
+            return 1
+        fi
+    else
+        ewarn "ss not available; cannot verify HTTP listener on port 80"
+    fi
+
+    return 0
+}
+
+start_post() {
+    # Wait for API to be responsive (uvicorn initialization takes time)
+    local tries=0
+    local max_tries=30
+    local mgmt_ip
+    while [ $tries -lt $max_tries ]; do
+        # Health check must run inside ns_mgmt where the API listens
+        mgmt_ip=$(ip netns exec ns_mgmt ip -4 addr show eth0 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | head -n1)
+
+        if [ -n "$mgmt_ip" ]; then
+            if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null "https://${mgmt_ip}:443/api/v1/system/health" 2>/dev/null; then
+                if command -v ss >/dev/null 2>&1; then
+                    if ! ip netns exec ns_mgmt ss -ltn "sport = :443" 2>/dev/null | grep -q ":443"; then
+                        ewarn "API port 443 not listening yet"
+                        sleep 1
+                        tries=$((tries + 1))
+                        continue
+                    fi
+                fi
+                # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
+                # API is now ready to accept requests - boot sequence complete
+                mkdir -p /var/run/encryptor
+                if [ ! -f /var/run/encryptor/boot-start ]; then
+                    ewarn "boot-start timestamp missing; creating fallback timestamp"
+                    date +%s.%N > /var/run/encryptor/boot-start
+                fi
+                date +%s.%N > /var/run/encryptor/boot-complete
+                einfo "API health endpoint reachable via MGMT IP ${mgmt_ip} after ${tries}s"
+                return 0
+            fi
+        else
+            if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null https://127.0.0.1:443/api/v1/system/health 2>/dev/null; then
+                if command -v ss >/dev/null 2>&1; then
+                    if ! ip netns exec ns_mgmt ss -ltn "sport = :443" 2>/dev/null | grep -q ":443"; then
+                        ewarn "API port 443 not listening yet"
+                        sleep 1
+                        tries=$((tries + 1))
+                        continue
+                    fi
+                fi
+                # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
+                mkdir -p /var/run/encryptor
+                if [ ! -f /var/run/encryptor/boot-start ]; then
+                    ewarn "boot-start timestamp missing; creating fallback timestamp"
+                    date +%s.%N > /var/run/encryptor/boot-start
+                fi
+                date +%s.%N > /var/run/encryptor/boot-complete
+                einfo "API health endpoint ready after ${tries}s"
+                return 0
+            fi
+        fi
+        sleep 1
+        tries=$((tries + 1))
+    done
+    eerror "API health endpoint not available after ${max_tries}s"
+    return 1
+}
+
+healthcheck() {
+    # Check if API is responding via HTTPS (run in ns_mgmt namespace)
+    # Use --no-check-certificate for self-signed cert
+    ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null https://127.0.0.1:443/api/v1/system/health || return 1
+    return 0
+}
+
+start() {
+    ebegin "Starting encryptor-api"
+    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        einfo "encryptor-api already running"
+        service_started
+        return 0
+    fi
+    start-stop-daemon --start --background \
+        --make-pidfile --pidfile "$pidfile" \
+        --chdir "$directory" \
+        --stdout "$output_log" --stderr "$error_log" \
+        --exec /sbin/ip -- netns exec ns_mgmt /usr/bin/python3 /opt/encryptor-sim/backend/uvicorn_server.py
+    local rc=$?
+    if [ $rc -ne 0 ]; then
+        return $rc
+    fi
+    for _ in 1 2 3 4 5; do
+        if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+            service_started
+            eend 0
+            return 0
+        fi
+        sleep 1
+    done
+    eend 1
+    return 1
+}
+
+stop() {
+    ebegin "Stopping encryptor-api"
+    start-stop-daemon --stop --pidfile "$pidfile"
+    service_stopped
+    eend $?
+}
+
+status() {
+    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        einfo "encryptor-api: running (pid $(cat "$pidfile"))"
+        return 0
+    fi
+    if pgrep -f "uvicorn main:app" >/dev/null 2>&1; then
+        ewarn "encryptor-api: running but pidfile missing or stale"
+        service_started
+        return 0
+    fi
+    ewarn "encryptor-api: stopped"
+    return 1
+}

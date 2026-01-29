@@ -1,0 +1,30 @@
+# /etc/network/interfaces
+# Network interface configuration for Encryptor Simulator
+#
+# Interface mapping for CML:
+#   eth0 - MGMT (Management) - DHCP by default
+#   eth1 - CT (Crypto Text)  - Manual configuration via UI
+#   eth2 - PT (Plain Text)   - Manual configuration via UI
+
+auto lo
+iface lo inet loopback
+
+# Management interface - DHCP enabled by default
+# Provides initial connectivity for web UI and API access
+auto eth0
+iface eth0 inet dhcp
+    hostname encryptor-sim
+
+# Crypto Text interface - manually configured via UI
+# Connects to the encrypted network side
+auto eth1
+iface eth1 inet manual
+    up ip link set $IFACE up
+    down ip link set $IFACE down
+
+# Plain Text interface - manually configured via UI
+# Connects to the plaintext network side
+auto eth2
+iface eth2 inet manual
+    up ip link set $IFACE up
+    down ip link set $IFACE down

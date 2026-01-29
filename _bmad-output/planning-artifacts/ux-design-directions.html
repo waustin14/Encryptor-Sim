@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Encryptor-Sim-BMAD — UX Design Directions</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --subtle: #64748b;
+      --border: #e2e8f0;
+      --panel: #ffffff;
+      --bg: #f7f9fc;
+      --accent: #1f5ea8;
+      --accent-2: #2aa39a;
+      --success: #14804a;
+      --warn: #b45309;
+      --error: #b42318;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: "IBM Plex Sans", "Space Grotesk", "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --radius: 14px;
+      --shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+      --gap: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 40px 24px 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 40px);
+      letter-spacing: -0.02em;
+    }
+    .lede {
+      max-width: 980px;
+      color: var(--subtle);
+      font-size: 16px;
+    }
+    .grid {
+      display: grid;
+      gap: var(--gap);
+      padding: 24px;
+    }
+    .directions {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #0f172a;
+      background: #eef2ff;
+      border: 1px solid #e2e8f0;
+    }
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--subtle);
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .section {
+      padding: 32px 24px 8px;
+    }
+    .section h2 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 30px);
+    }
+    .mockup {
+      background: #f9fbff;
+      border: 1px solid #dbe3ee;
+      border-radius: 20px;
+      padding: 18px;
+    }
+    .mockup .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #dbe3ee;
+      margin-bottom: 18px;
+    }
+    .mockup .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .nav .nav-item {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      background: #eef2ff;
+      color: #1f3a8a;
+      font-weight: 600;
+    }
+    .nav .nav-item.subtle {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 500;
+    }
+    .mockup .content {
+      display: grid;
+      gap: 16px;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .kpi {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+    }
+    .kpi .label { color: #64748b; font-size: 12px; }
+    .kpi .value { font-size: 20px; font-weight: 600; }
+    .table {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .table .row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 0.7fr;
+      padding: 10px 12px;
+      gap: 8px;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 13px;
+    }
+    .table .row.header {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 11px;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status.up { background: #dcfce7; color: #166534; }
+    .status.down { background: #fee2e2; color: #991b1b; }
+    .status.warn { background: #fef3c7; color: #92400e; }
+    .form {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      background: #ffffff;
+    }
+    .form .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .form label {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .form input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 1px solid #1f5ea8;
+      background: #1f5ea8;
+      color: #ffffff;
+      font-size: 13px;
+    }
+    .btn.secondary {
+      background: #ffffff;
+      color: #1f5ea8;
+    }
+
+    /* Direction-specific tweaks */
+    .dir-meridian { --accent: #1f5ea8; --accent-2: #2aa39a; }
+    .dir-slate { --bg: #f1f5f9; --panel: #f8fafc; }
+    .dir-signal { --accent: #0ea5e9; --accent-2: #10b981; }
+    .dir-atlas { --accent: #2563eb; --accent-2: #22c55e; }
+    .dir-lumen { --accent: #0f766e; --accent-2: #1d4ed8; }
+    .dir-grid { --accent: #0f172a; --accent-2: #1f5ea8; }
+
+    .direction-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .direction-title h3 { margin: 0; font-size: 20px; }
+    .direction-title span { color: var(--subtle); font-size: 13px; }
+
+    footer {
+      padding: 24px;
+      color: var(--subtle);
+      font-size: 13px;
+    }
+
+    @media (max-width: 720px) {
+      .table .row { grid-template-columns: 1fr; }
+      .mockup .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Encryptor-Sim-BMAD — Design Directions</h1>
+    <p class="lede">Six distinct visual directions based on calm confidence, Meraki simplicity, and Stripe-level clarity. Each direction shows a dashboard + configuration pattern to evaluate hierarchy, density, and status visibility.</p>
+  </header>
+
+  <section class="grid directions">
+    <article class="card">
+      <div class="direction-title">
+        <h3>1) Meridian</h3>
+        <span>Meraki-inspired calm</span>
+      </div>
+      <p class="lede">Soft blues, clear cards, airy spacing. Dashboard-first with high status visibility.</p>
+      <div class="meta">
+        <span class="chip">Dashboard priority</span>
+        <span class="chip">Card surfaces</span>
+        <span class="chip">Calm light</span>
+      </div>
+    </article>
+    <article class="card">
+      <div class="direction-title">
+        <h3>2) Slate Console</h3>
+        <span>Professional neutral</span>
+      </div>
+      <p class="lede">Cool gray neutrals, monochrome emphasis with restrained accents for alerts.</p>
+      <div class="meta">
+        <span class="chip">Neutral-first</span>
+        <span class="chip">Status-driven</span>
+        <span class="chip">Minimal chrome</span>
+      </div>
+    </article>
+    <article class="card">
+      <div class="direction-title">
+        <h3>3) Signal Flow</h3>
+        <span>Operational focus</span>
+      </div>
+      <p class="lede">Status-heavy top section with rapid scanning. Accents guide action flow.</p>
+      <div class="meta">
+        <span class="chip">Status overview</span>
+        <span class="chip">High legibility</span>
+        <span class="chip">Action rails</span>
+      </div>
+    </article>
+    <article class="card">
+      <div class="direction-title">
+        <h3>4) Atlas Split</h3>
+        <span>Side-by-side ops</span>
+      </div>
+      <p class="lede">Split layout: configuration on the left, live status on the right.</p>
+      <div class="meta">
+        <span class="chip">Dual-pane</span>
+        <span class="chip">Live status</span>
+        <span class="chip">Rapid edits</span>
+      </div>
+    </article>
+    <article class="card">
+      <div class="direction-title">
+        <h3>5) Lumen White</h3>
+        <span>Stripe-like clarity</span>
+      </div>
+      <p class="lede">Bright minimal surface, high whitespace, elegant hierarchy.</p>
+      <div class="meta">
+        <span class="chip">Ultra-clean</span>
+        <span class="chip">Large type</span>
+        <span class="chip">Low noise</span>
+      </div>
+    </article>
+    <article class="card">
+      <div class="direction-title">
+        <h3>6) Gridline Ops</h3>
+        <span>Table-centric</span>
+      </div>
+      <p class="lede">Structured grid with dominant tables for peers/routes and quick actions.</p>
+      <div class="meta">
+        <span class="chip">Dense data</span>
+        <span class="chip">Operational</span>
+        <span class="chip">Quick filters</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="section">
+    <h2>Mockups</h2>
+    <div class="grid">
+      <article class="mockup dir-meridian">
+        <div class="direction-title">
+          <h3>1) Meridian</h3>
+          <span>Meraki-inspired calm</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Appliance Status</div>
+          <div class="nav">
+            <div class="nav-item">Dashboard</div>
+            <div class="nav-item subtle">Interfaces</div>
+            <div class="nav-item subtle">Peers</div>
+            <div class="nav-item subtle">Routes</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="kpis">
+            <div class="kpi"><div class="label">Tunnels Up</div><div class="value">24</div></div>
+            <div class="kpi"><div class="label">Peers</div><div class="value">32</div></div>
+            <div class="kpi"><div class="label">Routes</div><div class="value">128</div></div>
+            <div class="kpi"><div class="label">Health</div><div class="value">Good</div></div>
+          </div>
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>CT IP</div><div>PT CIDR</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div class="mono">10.10.0.2</div><div class="mono">172.16.1.0/24</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div class="mono">10.10.0.7</div><div class="mono">172.16.7.0/24</div><div><span class="status warn">NEGOT</span></div></div>
+            <div class="row"><div>Partner-Lab</div><div class="mono">10.10.0.9</div><div class="mono">172.16.9.0/24</div><div><span class="status down">DOWN</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="mockup dir-slate">
+        <div class="direction-title">
+          <h3>2) Slate Console</h3>
+          <span>Professional neutral</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Peer Configuration</div>
+          <div class="nav">
+            <div class="nav-item">Peers</div>
+            <div class="nav-item subtle">Routes</div>
+            <div class="nav-item subtle">Interfaces</div>
+            <div class="nav-item subtle">Status</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="form">
+            <div class="field">
+              <label>Peer Name</label>
+              <input value="Branch-07" />
+            </div>
+            <div class="field">
+              <label>CT Remote IP</label>
+              <input value="10.10.0.7" />
+            </div>
+            <div class="field">
+              <label>IKE Version</label>
+              <input value="IKEv2" />
+            </div>
+            <div class="actions">
+              <button class="btn">Save Peer</button>
+              <button class="btn secondary">Test Connection</button>
+            </div>
+          </div>
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>Last Update</div><div>Tunnel</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div>2m ago</div><div>1.2s</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div>just now</div><div>—</div><div><span class="status warn">NEGOT</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="mockup dir-signal">
+        <div class="direction-title">
+          <h3>3) Signal Flow</h3>
+          <span>Operational focus</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Operations</div>
+          <div class="nav">
+            <div class="nav-item">Status</div>
+            <div class="nav-item subtle">Peers</div>
+            <div class="nav-item subtle">Routes</div>
+            <div class="nav-item subtle">Interfaces</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="kpis">
+            <div class="kpi"><div class="label">Active Tunnels</div><div class="value">24</div></div>
+            <div class="kpi"><div class="label">Warnings</div><div class="value">2</div></div>
+            <div class="kpi"><div class="label">Errors</div><div class="value">1</div></div>
+            <div class="kpi"><div class="label">Last Config</div><div class="value">1m</div></div>
+          </div>
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>Route</div><div>Latency</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div class="mono">172.16.1.0/24</div><div>12ms</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div class="mono">172.16.7.0/24</div><div>—</div><div><span class="status warn">NEGOT</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="mockup dir-atlas">
+        <div class="direction-title">
+          <h3>4) Atlas Split</h3>
+          <span>Side-by-side ops</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Quick Config</div>
+          <div class="nav">
+            <div class="nav-item">Dashboard</div>
+            <div class="nav-item subtle">Config</div>
+            <div class="nav-item subtle">Status</div>
+          </div>
+        </div>
+        <div class="content" style="grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);">
+          <div class="form">
+            <div class="field">
+              <label>CT Interface</label>
+              <input value="10.10.0.1/24" />
+            </div>
+            <div class="field">
+              <label>PT Interface</label>
+              <input value="192.168.0.1/24" />
+            </div>
+            <div class="field">
+              <label>MGMT Interface</label>
+              <input value="10.0.0.10/24" />
+            </div>
+            <div class="actions">
+              <button class="btn">Save Interfaces</button>
+              <button class="btn secondary">Validate</button>
+            </div>
+          </div>
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>CT IP</div><div>Routes</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div class="mono">10.10.0.2</div><div>4</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div class="mono">10.10.0.7</div><div>2</div><div><span class="status warn">NEGOT</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="mockup dir-lumen">
+        <div class="direction-title">
+          <h3>5) Lumen White</h3>
+          <span>Stripe-like clarity</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Main</div>
+          <div class="nav">
+            <div class="nav-item">Overview</div>
+            <div class="nav-item subtle">Peers</div>
+            <div class="nav-item subtle">Routes</div>
+            <div class="nav-item subtle">Interfaces</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="kpis">
+            <div class="kpi"><div class="label">Encrypted Peers</div><div class="value">32</div></div>
+            <div class="kpi"><div class="label">Routes Linked</div><div class="value">128</div></div>
+            <div class="kpi"><div class="label">Uptime</div><div class="value">14d</div></div>
+            <div class="kpi"><div class="label">Alerts</div><div class="value">1</div></div>
+          </div>
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>Tunnel</div><div>Last Activity</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div>1.2s</div><div>5s ago</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div>—</div><div>just now</div><div><span class="status warn">NEGOT</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="mockup dir-grid">
+        <div class="direction-title">
+          <h3>6) Gridline Ops</h3>
+          <span>Table-centric</span>
+        </div>
+        <div class="topbar">
+          <div><strong>Encryptor-Sim</strong> · Peers & Routes</div>
+          <div class="nav">
+            <div class="nav-item">Peers</div>
+            <div class="nav-item subtle">Routes</div>
+            <div class="nav-item subtle">Status</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="table">
+            <div class="row header"><div>Peer</div><div>CT IP</div><div>Routes</div><div>Status</div></div>
+            <div class="row"><div>HQ-Edge-01</div><div class="mono">10.10.0.2</div><div>4</div><div><span class="status up">UP</span></div></div>
+            <div class="row"><div>Branch-07</div><div class="mono">10.10.0.7</div><div>2</div><div><span class="status warn">NEGOT</span></div></div>
+            <div class="row"><div>Partner-Lab</div><div class="mono">10.10.0.9</div><div>1</div><div><span class="status down">DOWN</span></div></div>
+          </div>
+          <div class="actions">
+            <button class="btn">Add Peer</button>
+            <button class="btn secondary">Add Route</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    Open the file locally: _bmad-output/planning-artifacts/ux-design-directions.html
+  </footer>
+</body>
+</html>

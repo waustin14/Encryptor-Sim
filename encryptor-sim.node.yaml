@@ -1,0 +1,60 @@
+id: encryptor-sim
+sim:
+  linux_native:
+    driver: server
+    libvirt_domain_driver: kvm
+    nic_driver: virtio
+    disk_driver: ide
+    ram: 1024
+    cpus: 2
+    cpu_limit: 100
+general:
+  nature: router
+  description: |-
+    Encryptor-Sim Appliance
+
+    MGMT, PT, and CT interfaces for IPsec simulation.
+  read_only: false
+schema_version: 0.0.1
+inherited:
+  image:
+    ram: true
+    cpus: false
+    data_volume: false
+    boot_disk_size: false
+    cpu_limit: true
+  node:
+    ram: true
+    cpus: false
+    data_volume: false
+    boot_disk_size: false
+    cpu_limit: true
+configuration:
+  generator:
+    driver: server
+device:
+  interfaces:
+    physical:
+      - MGMT
+      - CT
+      - PT
+    has_loopback_zero: true
+    default_count: 3
+    serial_ports: 1
+    loopback:
+      - lo
+boot:
+  timeout: 60
+  completed:
+    - Encryptor-Sim Login
+  uses_regex: false
+ui:
+  group: Others
+  icon: server
+  label_prefix: es-
+  label: Encryptor-Sim
+  visible: true
+  description: |-
+    Encryptor-Sim Appliance
+
+    1 GB DRAM, 2 vCPU (min)

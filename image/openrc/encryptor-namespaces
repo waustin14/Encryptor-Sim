@@ -1,0 +1,298 @@
+#!/sbin/openrc-run
+# OpenRC service: encryptor-namespaces
+# Creates and configures network namespaces for traffic isolation
+#
+# This service must start before encryptor-daemon and encryptor-api
+# to ensure namespace infrastructure is ready.
+
+name="encryptor-namespaces"
+description="Encryptor Simulator Network Namespace Initialization"
+
+# Dependencies - must run early in boot
+depend() {
+    need net
+    before encryptor-daemon encryptor-api
+    after networking
+}
+
+# Namespace names
+NS_CT="ns_ct"
+NS_PT="ns_pt"
+NS_MGMT="ns_mgmt"
+
+# Interface names (CML mapping)
+IF_MGMT="eth0"
+IF_CT="eth1"
+IF_PT="eth2"
+
+# Configuration paths for static IP support (Story 2.4)
+NETWORK_CONFIG="/etc/encryptor/network-config"
+INTERFACES_FILE="/etc/network/interfaces.d/mgmt"
+
+create_namespace() {
+    local ns_name="$1"
+    if ! namespace_exists "$ns_name"; then
+        einfo "Creating namespace: ${ns_name}"
+        ip netns add "$ns_name"
+    fi
+}
+
+delete_namespace() {
+    local ns_name="$1"
+    if namespace_exists "$ns_name"; then
+        einfo "Deleting namespace: ${ns_name}"
+        ip netns delete "$ns_name"
+    fi
+}
+
+namespace_exists() {
+    local ns_name="$1"
+    ip netns list | awk '{print $1}' | grep -qx "$ns_name"
+}
+
+interface_has_ip() {
+    # Check if interface has an IPv4 address in specified namespace
+    local ns_name="$1"
+    local if_name="$2"
+
+    # Use ip addr to check for inet (IPv4) address
+    ip netns exec "$ns_name" ip -4 addr show "$if_name" 2>/dev/null | grep -q "inet "
+}
+
+wait_for_dhcp() {
+    # Wait for DHCP lease to be applied to interface
+    local ns_name="$1"
+    local if_name="$2"
+    local max_tries="${3:-15}"
+
+    local tries=0
+    while [ "$tries" -lt "$max_tries" ]; do
+        if interface_has_ip "$ns_name" "$if_name"; then
+            return 0
+        fi
+        sleep 1
+        tries=$((tries + 1))
+    done
+    return 1
+}
+
+move_interface_to_namespace() {
+    local if_name="$1"
+    local ns_name="$2"
+
+    if ! ip link show "$if_name" >/dev/null 2>&1; then
+        ewarn "Interface ${if_name} not found in default namespace"
+        return 1
+    fi
+
+    ip link set "$if_name" down
+    ip link set "$if_name" netns "$ns_name"
+    ip netns exec "$ns_name" ip link set "$if_name" up
+}
+
+get_mgmt_mode() {
+    # Read MGMT network configuration mode from flag file
+    # Returns: "static" or "dhcp" (default)
+    local mode="dhcp"
+
+    if [ -f "$NETWORK_CONFIG" ]; then
+        mode=$(grep '^mode=' "$NETWORK_CONFIG" 2>/dev/null | cut -d= -f2 || echo "dhcp")
+    fi
+
+    # Validate mode is either static or dhcp, default to dhcp
+    case "$mode" in
+        static|dhcp) echo "$mode" ;;
+        *) echo "dhcp" ;;
+    esac
+}
+
+apply_static_config() {
+    # Apply static IP configuration from interfaces file
+    local result=0
+    local address netmask gateway cidr
+
+    if [ ! -f "$INTERFACES_FILE" ]; then
+        ewarn "Static mode set but interfaces file not found: $INTERFACES_FILE"
+        ewarn "Falling back to DHCP"
+        ip netns exec "$NS_MGMT" udhcpc -i "$IF_MGMT" >/dev/null 2>&1 || true
+        return 1
+    fi
+
+    einfo "Applying static configuration from $INTERFACES_FILE"
+
+    # Parse config file for manual fallback
+    address=$(grep -E '^\s*address' "$INTERFACES_FILE" | awk '{print $2}')
+    netmask=$(grep -E '^\s*netmask' "$INTERFACES_FILE" | awk '{print $2}')
+    gateway=$(grep -E '^\s*gateway' "$INTERFACES_FILE" | awk '{print $2}')
+
+    # Use ifup if available, otherwise parse file manually
+    if command -v ifup >/dev/null 2>&1; then
+        ip netns exec "$NS_MGMT" ifup "$IF_MGMT" -i "$INTERFACES_FILE" 2>/dev/null || {
+            ewarn "ifup failed, attempting manual configuration"
+            result=1
+        }
+    else
+        # Manual configuration fallback
+        result=1
+    fi
+
+    if [ "$result" -ne 0 ] && [ -n "$address" ] && [ -n "$netmask" ]; then
+        # Convert netmask to CIDR
+        cidr=$(netmask_to_cidr "$netmask")
+        ip netns exec "$NS_MGMT" ip addr add "${address}/${cidr}" dev "$IF_MGMT" 2>/dev/null || result=1
+
+        if [ -n "$gateway" ]; then
+            ip netns exec "$NS_MGMT" ip route add default via "$gateway" 2>/dev/null || true
+        fi
+    fi
+
+    if [ "$result" -ne 0 ]; then
+        ewarn "Static configuration failed, falling back to DHCP"
+        ip netns exec "$NS_MGMT" udhcpc -i "$IF_MGMT" >/dev/null 2>&1 || true
+        return 1
+    fi
+
+    return $result
+}
+
+netmask_to_cidr() {
+    # Convert dotted netmask to CIDR notation
+    local netmask="$1"
+    local cidr=0
+
+    local IFS='.'
+    set -- $netmask
+    for octet in "$1" "$2" "$3" "$4"; do
+        case "$octet" in
+            255) cidr=$((cidr + 8)) ;;
+            254) cidr=$((cidr + 7)) ;;
+            252) cidr=$((cidr + 6)) ;;
+            248) cidr=$((cidr + 5)) ;;
+            240) cidr=$((cidr + 4)) ;;
+            224) cidr=$((cidr + 3)) ;;
+            192) cidr=$((cidr + 2)) ;;
+            128) cidr=$((cidr + 1)) ;;
+            0) ;;
+        esac
+    done
+
+    echo "$cidr"
+}
+
+start() {
+    # Record boot start timestamp FIRST (Story 2.5: Boot Health Indicator)
+    # This is the first service to start, so we record the appliance boot start time
+    mkdir -p /var/run/encryptor
+    date +%s.%N > /var/run/encryptor/boot-start
+
+    ebegin "Creating network namespaces"
+
+    # Create namespaces for CT, PT, and MGMT traffic isolation
+    create_namespace "$NS_CT"
+    create_namespace "$NS_PT"
+    create_namespace "$NS_MGMT"
+
+    # Enable IP forwarding in main namespace
+    sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
+
+    # Set up loopback in each namespace
+    for ns in "$NS_CT" "$NS_PT" "$NS_MGMT"; do
+        ip netns exec "$ns" ip link set lo up
+    done
+
+    # Move interfaces into namespaces (CML mapping)
+    move_interface_to_namespace "$IF_CT" "$NS_CT" || true
+    move_interface_to_namespace "$IF_PT" "$NS_PT" || true
+    move_interface_to_namespace "$IF_MGMT" "$NS_MGMT" || true
+
+    # Configure MGMT interface based on mode (Story 2.4: Static IP support)
+    local mgmt_mode
+    mgmt_mode=$(get_mgmt_mode)
+    einfo "MGMT configuration mode: $mgmt_mode"
+
+    case "$mgmt_mode" in
+        static)
+            # Apply static configuration from interfaces file
+            apply_static_config
+            ;;
+        dhcp|*)
+            # Run DHCP client (default behavior)
+            if command -v udhcpc >/dev/null 2>&1; then
+                ip netns exec "$NS_MGMT" udhcpc -i "$IF_MGMT" >/dev/null 2>&1 || true
+            fi
+            ;;
+    esac
+
+    eend $?
+}
+
+start_post() {
+    local missing=0
+
+    for ns in "$NS_CT" "$NS_PT" "$NS_MGMT"; do
+        if ! namespace_exists "$ns"; then
+            eerror "Namespace ${ns} missing after start"
+            missing=1
+        fi
+    done
+
+    if ! ip netns exec "$NS_CT" ip link show "$IF_CT" >/dev/null 2>&1; then
+        eerror "Interface ${IF_CT} not present in ${NS_CT}"
+        missing=1
+    fi
+    if ! ip netns exec "$NS_PT" ip link show "$IF_PT" >/dev/null 2>&1; then
+        eerror "Interface ${IF_PT} not present in ${NS_PT}"
+        missing=1
+    fi
+    if ! ip netns exec "$NS_MGMT" ip link show "$IF_MGMT" >/dev/null 2>&1; then
+        eerror "Interface ${IF_MGMT} not present in ${NS_MGMT}"
+        missing=1
+    fi
+
+    # Verify MGMT interface has IP (static or DHCP)
+    # This is a warning, not an error - boot continues even without IP
+    local mgmt_mode
+    mgmt_mode=$(get_mgmt_mode)
+
+    if interface_has_ip "$NS_MGMT" "$IF_MGMT"; then
+        local mgmt_ip
+        mgmt_ip=$(ip netns exec "$NS_MGMT" ip -4 addr show "$IF_MGMT" | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+        einfo "MGMT interface ${IF_MGMT} configured with IP: ${mgmt_ip} (mode: ${mgmt_mode})"
+    else
+        ewarn "MGMT interface ${IF_MGMT} has no IP address (mode: ${mgmt_mode})"
+        if [ "$mgmt_mode" = "dhcp" ]; then
+            ewarn "DHCP failed - use serial console to configure static IP"
+        else
+            ewarn "Static configuration may have failed - check ${INTERFACES_FILE}"
+        fi
+        # Don't fail boot - API can still bind to 0.0.0.0 but won't be accessible
+    fi
+
+    return $missing
+}
+
+stop() {
+    ebegin "Removing network namespaces"
+
+    # Delete namespaces
+    delete_namespace "$NS_CT"
+    delete_namespace "$NS_PT"
+    delete_namespace "$NS_MGMT"
+
+    eend $?
+}
+
+status() {
+    local all_present=0
+
+    for ns in "$NS_CT" "$NS_PT" "$NS_MGMT"; do
+        if namespace_exists "$ns"; then
+            einfo "Namespace ${ns}: active"
+        else
+            ewarn "Namespace ${ns}: missing"
+            all_present=1
+        fi
+    done
+
+    return $all_present
+}

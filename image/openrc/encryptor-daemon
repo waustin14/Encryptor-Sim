@@ -1,0 +1,146 @@
+#!/sbin/openrc-run
+# OpenRC service: encryptor-daemon
+# Privileged daemon for strongSwan and nftables operations
+#
+# This daemon runs as root and handles:
+# - strongSwan IKE/IPsec configuration
+# - nftables firewall rules
+# - Network namespace operations
+#
+# Communication with the API is via Unix domain socket IPC.
+
+name="encryptor-daemon"
+description="Encryptor Simulator Privileged Daemon"
+
+command="/usr/bin/python3"
+command_args="-m daemon.main"
+command_background="yes"
+command_user="root"
+start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
+
+directory="/opt/encryptor-sim/backend"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/encryptor-sim/daemon.log"
+error_log="/var/log/encryptor-sim/daemon.error.log"
+
+# Environment variables for daemon socket path
+export ENCRYPTOR_DAEMON_SOCKET="/run/encryptor-sim/daemon.sock"
+export APP_DAEMON_SOCKET_PATH="/run/encryptor-sim/daemon.sock"
+export PYTHONPATH="/opt/encryptor-sim"
+
+# Dependencies
+depend() {
+    need encryptor-namespaces
+    before encryptor-api
+    after networking
+}
+
+start_pre() {
+    if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        rm -f "$pidfile"
+    fi
+
+    # Load PSK encryption key for daemon settings
+    if [ -f /etc/encryptor-sim/psk.key ]; then
+        export APP_PSK_ENCRYPTION_KEY="$(cat /etc/encryptor-sim/psk.key)"
+    else
+        eerror "PSK encryption key not found at /etc/encryptor-sim/psk.key"
+        return 1
+    fi
+
+    # Ensure log directory exists
+    checkpath --directory --owner root:root --mode 0755 /var/log/encryptor-sim
+
+    # Ensure IPC socket directory exists
+    checkpath --directory --owner root:root --mode 0755 /run/encryptor-sim
+
+    # Verify namespaces are ready
+    if ! ip netns list | grep -q "ns_ct"; then
+        eerror "Network namespaces not initialized"
+        return 1
+    fi
+
+    # Verify strongSwan is available
+    if ! command -v swanctl >/dev/null 2>&1; then
+        eerror "strongSwan (swanctl) not found"
+        return 1
+    fi
+
+    # Verify nftables is available
+    if ! command -v nft >/dev/null 2>&1; then
+        eerror "nftables not found"
+        return 1
+    fi
+
+    return 0
+}
+
+stop_post() {
+    # Clean up IPC socket if it exists
+    rm -f /run/encryptor-sim/daemon.sock
+}
+
+start_post() {
+    # Wait for daemon IPC socket to be created (daemon initialization takes time)
+    local tries=0
+    local max_tries=30
+    while [ $tries -lt $max_tries ]; do
+        if [ -S /run/encryptor-sim/daemon.sock ]; then
+            einfo "Daemon IPC socket ready after ${tries}s"
+            return 0
+        fi
+        sleep 1
+        tries=$((tries + 1))
+    done
+    eerror "Daemon IPC socket not available after ${max_tries}s"
+    return 1
+}
+
+start() {
+    ebegin "Starting encryptor-daemon"
+    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        einfo "encryptor-daemon already running"
+        service_started
+        return 0
+    fi
+    start-stop-daemon --start --background \
+        --make-pidfile --pidfile "$pidfile" \
+        --chdir "$directory" \
+        --stdout "$output_log" --stderr "$error_log" \
+        --exec /usr/bin/python3 -- -m daemon.main
+    local rc=$?
+    if [ $rc -ne 0 ]; then
+        return $rc
+    fi
+    for _ in 1 2 3 4 5; do
+        if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+            service_started
+            eend 0
+            return 0
+        fi
+        sleep 1
+    done
+    eend 1
+    return 1
+}
+
+stop() {
+    ebegin "Stopping encryptor-daemon"
+    start-stop-daemon --stop --pidfile "$pidfile"
+    service_stopped
+    eend $?
+}
+
+status() {
+    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        einfo "encryptor-daemon: running (pid $(cat "$pidfile"))"
+        return 0
+    fi
+    if pgrep -f "python3 -m daemon.main" >/dev/null 2>&1; then
+        ewarn "encryptor-daemon: running but pidfile missing or stale"
+        service_started
+        return 0
+    fi
+    ewarn "encryptor-daemon: stopped"
+    return 1
+}

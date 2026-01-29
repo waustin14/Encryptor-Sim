@@ -1,0 +1,105 @@
+# CML Node Definition for Encryptor Simulator
+#
+# This file defines how the Encryptor Simulator appears in
+# Cisco Modeling Labs (CML). Import this along with the qcow2
+# image to add the appliance to your CML instance.
+#
+# Import Instructions:
+# 1. Upload encryptor-sim.qcow2 to CML image repository
+# 2. Import this node definition via CML admin UI
+# 3. The node will appear in the device palette
+
+id: encryptor-sim
+label: Encryptor Simulator
+description: >
+  IPsec Network Encryptor Simulator for testing and training.
+  Provides web-based configuration of IPsec tunnels with
+  strongSwan backend and nftables-based traffic isolation.
+
+# Node type configuration
+node_definition_id: encryptor-sim
+device_type: server
+
+# Configuration parameters
+configuration:
+  # Image reference (must match uploaded image name)
+  image: encryptor-sim
+
+  # Boot configuration
+  boot:
+    disk_image: encryptor-sim.qcow2
+    boot_disk_size: 2G
+
+  # Serial console configuration
+  serial:
+    enabled: true
+    console_count: 1
+
+# Resource requirements
+# Minimum: 2 vCPU, 1GB RAM (as per NFR-C4, NFR-C5)
+# Maximum: 4 vCPU, 2GB RAM (recommended for production use)
+resource_pool:
+  cpus:
+    min: 2
+    max: 4
+    default: 2
+  memory:
+    min: 1024     # 1GB minimum
+    max: 2048     # 2GB maximum
+    default: 1024
+
+# Network interfaces
+# eth0: Management (DHCP)
+# eth1: Crypto Text (IPsec encrypted side)
+# eth2: Plain Text (unencrypted side)
+interfaces:
+  - id: eth0
+    label: MGMT
+    slot: 0
+    type: physical
+    default_config: dhcp
+    description: Management interface for web UI and API access
+
+  - id: eth1
+    label: CT
+    slot: 1
+    type: physical
+    default_config: none
+    description: Crypto Text - connects to encrypted network segment
+
+  - id: eth2
+    label: PT
+    slot: 2
+    type: physical
+    default_config: none
+    description: Plain Text - connects to unencrypted network segment
+
+# UI presentation
+ui:
+  # Node icon (uses built-in server icon)
+  icon: server
+
+  # Label configuration
+  label_prefix: encryptor
+
+  # Palette category
+  category: Security
+  subcategory: Encryption
+
+# Tags for filtering
+tags:
+  - security
+  - ipsec
+  - encryption
+  - simulator
+  - training
+
+# Pyats/testbed support
+pyats:
+  os: linux
+  platform: server
+  connection_type: ssh
+  credentials:
+    default:
+      username: admin
+      password: ~  # Set during first login

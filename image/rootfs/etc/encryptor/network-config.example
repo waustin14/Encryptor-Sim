@@ -1,0 +1,19 @@
+# Network configuration mode for MGMT interface
+# This file determines how the MGMT interface (eth0) is configured at boot.
+#
+# Values:
+#   dhcp   - Use DHCP client to obtain IP address (default)
+#   static - Use static IP configuration from /etc/network/interfaces.d/mgmt
+#
+# To configure static IP:
+#   1. Run 'configure-mgmt' from serial console
+#   2. Select option 1 (Configure Static IP)
+#   3. Enter IP address, netmask, and gateway
+#
+# To revert to DHCP:
+#   1. Run 'configure-mgmt' from serial console
+#   2. Select option 2 (Revert to DHCP)
+#
+# This file is managed by the configure-mgmt script.
+# Manual editing is not recommended.
+mode=dhcp

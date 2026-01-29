@@ -1,0 +1,23 @@
+# MGMT interface static configuration
+# Example file - copy to /etc/network/interfaces.d/mgmt and modify
+#
+# This configuration is used when /etc/encryptor/network-config contains mode=static
+#
+# To configure static IP, use the configure-mgmt script instead of editing manually:
+#   1. Connect to serial console
+#   2. Run: configure-mgmt
+#   3. Select option 1 (Configure Static IP)
+#
+# The script will:
+#   - Validate IP addresses
+#   - Create this file with your settings
+#   - Set mode=static in /etc/encryptor/network-config
+#   - Apply configuration immediately
+#   - Configuration persists across reboots
+#
+# Format follows standard Alpine Linux interfaces(5) format
+auto eth0
+iface eth0 inet static
+    address 192.168.1.100
+    netmask 255.255.255.0
+    gateway 192.168.1.1
