@@ -54,3 +54,24 @@ class MeResponse(BaseModel):
 
     data: UserResponse
     meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChangePasswordRequest(BaseModel):
+    """Password change request."""
+
+    currentPassword: str = Field(..., min_length=1, max_length=72)
+    newPassword: str = Field(..., min_length=1, max_length=72)
+
+
+class ChangePasswordData(BaseModel):
+    """Password change success data."""
+
+    message: str
+    requirePasswordChange: bool
+
+
+class ChangePasswordResponse(BaseModel):
+    """Password change response with envelope."""
+
+    data: ChangePasswordData
+    meta: dict[str, Any] = Field(default_factory=dict)

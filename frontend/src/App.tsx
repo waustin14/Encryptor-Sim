@@ -8,6 +8,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 
@@ -16,6 +17,14 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={

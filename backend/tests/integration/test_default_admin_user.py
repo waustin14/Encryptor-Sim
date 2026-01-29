@@ -62,12 +62,12 @@ class TestDefaultAdminUser:
         password_hash = row[0]
         assert verify_password("wrong", password_hash) is False
 
-    def test_admin_require_password_change_is_false(self, db_session):
-        """Test that requirePasswordChange is False for default admin."""
+    def test_admin_require_password_change_is_true(self, db_session):
+        """Test that requirePasswordChange is True for default admin after migration 0004."""
         result = db_session.execute(
             text("SELECT requirePasswordChange FROM users WHERE username = 'admin'")
         )
         row = result.fetchone()
         assert row is not None
         # SQLite stores boolean as 0/1
-        assert row[0] == 0 or row[0] is False
+        assert row[0] == 1 or row[0] is True

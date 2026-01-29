@@ -10,10 +10,18 @@ from sqlalchemy.orm import Session
 
 from backend.app.auth.deps import get_current_user
 from backend.app.auth.jwt import create_access_token, create_refresh_token
-from backend.app.auth.password import verify_password
+from backend.app.auth.password import (
+    hash_password,
+    validate_password_complexity,
+    validate_password_not_reused,
+    verify_password,
+)
 from backend.app.db.deps import get_db_session
 from backend.app.models.user import User
 from backend.app.schemas.auth import (
+    ChangePasswordData,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
     LoginRequest,
     MeResponse,
     TokenData,
@@ -109,6 +117,83 @@ def logout(
         "data": {"message": "Logged out successfully"},
         "meta": {"timestamp": datetime.now(timezone.utc).isoformat()},
     }
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+) -> ChangePasswordResponse:
+    """Change user password.
+
+    Requires valid access token, current password verification,
+    and new password complexity validation.
+
+    Args:
+        request: Password change request with current and new passwords.
+        current_user: The authenticated user from JWT token.
+        db: Database session.
+
+    Returns:
+        ChangePasswordResponse confirming password change.
+
+    Raises:
+        HTTPException: 401 if current password is wrong.
+        HTTPException: 422 if new password fails validation.
+    """
+    # Verify current password
+    if not verify_password(request.currentPassword, current_user.passwordHash):
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "type": "about:blank",
+                "title": "Authentication Failed",
+                "status": 401,
+                "detail": "Current password is incorrect",
+            },
+        )
+
+    # Validate new password complexity
+    is_valid, error_msg = validate_password_complexity(request.newPassword)
+    if not is_valid:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "about:blank",
+                "title": "Validation Error",
+                "status": 422,
+                "detail": error_msg,
+            },
+        )
+
+    # Ensure new password is different from current
+    is_different, error_msg = validate_password_not_reused(
+        request.newPassword, current_user.passwordHash
+    )
+    if not is_different:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "about:blank",
+                "title": "Validation Error",
+                "status": 422,
+                "detail": error_msg,
+            },
+        )
+
+    # Hash new password and update user
+    current_user.passwordHash = hash_password(request.newPassword)
+    current_user.requirePasswordChange = False
+    db.commit()
+
+    return ChangePasswordResponse(
+        data=ChangePasswordData(
+            message="Password changed successfully",
+            requirePasswordChange=False,
+        ),
+        meta={"timestamp": datetime.now(timezone.utc).isoformat()},
+    )
 
 
 @router.get("/me", response_model=MeResponse)

@@ -21,6 +21,7 @@ interface AuthState {
 
   login: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   setTokens: (accessToken: string, refreshToken: string) => void
   clearAuth: () => void
 }
@@ -85,6 +86,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       refreshToken: null,
       isAuthenticated: false,
     })
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const token = get().accessToken
+
+    const response = await fetch('/api/v1/auth/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      // Handle RFC 7807 error format and fallbacks
+      const errorMessage =
+        typeof error.detail === 'object' && error.detail !== null
+          ? error.detail.detail || 'Password change failed'
+          : typeof error.detail === 'string'
+            ? error.detail
+            : 'Password change failed'
+      throw new Error(errorMessage)
+    }
+
+    // Update user state to reflect password no longer requires change
+    const currentUser = get().user
+    if (currentUser) {
+      set({ user: { ...currentUser, requirePasswordChange: false } })
+    }
   },
 
   setTokens: (accessToken: string, refreshToken: string) => {
