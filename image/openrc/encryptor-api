@@ -116,14 +116,6 @@ start_post() {
 
         if [ -n "$mgmt_ip" ]; then
             if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null "https://${mgmt_ip}:443/api/v1/system/health" 2>/dev/null; then
-                if command -v ss >/dev/null 2>&1; then
-                    if ! ip netns exec ns_mgmt ss -ltn "sport = :443" 2>/dev/null | grep -q ":443"; then
-                        ewarn "API port 443 not listening yet"
-                        sleep 1
-                        tries=$((tries + 1))
-                        continue
-                    fi
-                fi
                 # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
                 # API is now ready to accept requests - boot sequence complete
                 mkdir -p /var/run/encryptor
@@ -137,14 +129,6 @@ start_post() {
             fi
         else
             if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null https://127.0.0.1:443/api/v1/system/health 2>/dev/null; then
-                if command -v ss >/dev/null 2>&1; then
-                    if ! ip netns exec ns_mgmt ss -ltn "sport = :443" 2>/dev/null | grep -q ":443"; then
-                        ewarn "API port 443 not listening yet"
-                        sleep 1
-                        tries=$((tries + 1))
-                        continue
-                    fi
-                fi
                 # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
                 mkdir -p /var/run/encryptor
                 if [ ! -f /var/run/encryptor/boot-start ]; then
