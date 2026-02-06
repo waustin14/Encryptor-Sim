@@ -2,24 +2,39 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi.testclient import TestClient
+
+# Set test environment variables before importing app
+os.environ.setdefault("APP_PSK_ENCRYPTION_KEY", "test-key-for-testing-32bytes1")
+os.environ.setdefault("APP_SECRET_KEY", "test-secret-key-for-jwt-testing")
 
 from backend.main import app
 
 
 client = TestClient(app)
 
+def _auth_headers() -> dict[str, str]:
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "changeme"},
+    )
+    assert login_response.status_code == 200
+    token = login_response.json()["data"]["accessToken"]
+    return {"Authorization": f"Bearer {token}"}
+
 
 def test_health_endpoint_returns_200() -> None:
     """Verify health endpoint returns 200 OK."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
 
     assert response.status_code == 200
 
 
 def test_health_endpoint_returns_correct_structure() -> None:
     """Verify health endpoint returns { data, meta } envelope."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     body = response.json()
 
     assert "data" in body
@@ -28,7 +43,7 @@ def test_health_endpoint_returns_correct_structure() -> None:
 
 def test_health_endpoint_data_contains_required_fields() -> None:
     """Verify health data contains status, bootDuration, services, timestamp."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     data = response.json()["data"]
 
     assert "status" in data
@@ -42,7 +57,7 @@ def test_health_endpoint_data_contains_required_fields() -> None:
 
 def test_health_endpoint_services_contains_all_components() -> None:
     """Verify services object contains namespaces, daemon, api."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     services = response.json()["data"]["services"]
 
     assert "namespaces" in services
@@ -55,7 +70,7 @@ def test_health_endpoint_services_contains_all_components() -> None:
 
 def test_health_endpoint_boot_duration_is_positive() -> None:
     """Verify bootDuration is a positive number or null (Story 2.5: can be None if timestamps missing)."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     data = response.json()["data"]
     boot_duration = data["bootDuration"]
     boot_target = data["bootTarget"]
@@ -79,7 +94,7 @@ def test_health_endpoint_boot_duration_is_positive() -> None:
 
 def test_health_endpoint_api_status_is_running() -> None:
     """Verify API status is 'running' when endpoint responds."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     api_status = response.json()["data"]["services"]["api"]
 
     assert api_status == "running"
@@ -87,7 +102,7 @@ def test_health_endpoint_api_status_is_running() -> None:
 
 def test_health_endpoint_includes_mgmt_interface() -> None:
     """Verify health endpoint includes mgmtInterface field (AC: #1, #2)."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     data = response.json()["data"]
 
     assert "mgmtInterface" in data, "Health response must include mgmtInterface"
@@ -95,7 +110,7 @@ def test_health_endpoint_includes_mgmt_interface() -> None:
 
 def test_health_endpoint_mgmt_interface_has_required_fields() -> None:
     """Verify mgmtInterface contains interface, ip, method, status fields."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     assert "interface" in mgmt, "Must include interface name"
@@ -107,7 +122,7 @@ def test_health_endpoint_mgmt_interface_has_required_fields() -> None:
 
 def test_health_endpoint_mgmt_interface_method_values() -> None:
     """Verify method field has valid value."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     valid_methods = {"dhcp", "static", "unknown"}
@@ -116,7 +131,7 @@ def test_health_endpoint_mgmt_interface_method_values() -> None:
 
 def test_health_endpoint_mgmt_interface_status_values() -> None:
     """Verify status field has valid value."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     valid_statuses = {"up", "down", "unknown", "error"}
@@ -125,7 +140,7 @@ def test_health_endpoint_mgmt_interface_status_values() -> None:
 
 def test_health_endpoint_mgmt_interface_lease_status_values() -> None:
     """Verify leaseStatus field has valid value."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     valid_lease_statuses = {"obtained", "failed", "static", "unknown"}
@@ -136,7 +151,7 @@ def test_health_endpoint_mgmt_interface_lease_status_values() -> None:
 
 def test_health_endpoint_mgmt_interface_includes_netmask() -> None:
     """Verify mgmtInterface includes netmask field (Story 2.4)."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     assert "netmask" in mgmt, "Must include netmask field"
@@ -147,7 +162,7 @@ def test_health_endpoint_mgmt_interface_includes_netmask() -> None:
 
 def test_health_endpoint_mgmt_interface_includes_gateway() -> None:
     """Verify mgmtInterface includes gateway field (Story 2.4)."""
-    response = client.get("/api/v1/system/health")
+    response = client.get("/api/v1/system/health", headers=_auth_headers())
     mgmt = response.json()["data"]["mgmtInterface"]
 
     assert "gateway" in mgmt, "Must include gateway field"

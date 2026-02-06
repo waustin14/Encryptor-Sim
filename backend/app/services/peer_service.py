@@ -1,24 +1,15 @@
-from sqlalchemy.orm import Session
+"""Legacy peer service - re-exports from ipsec_peer_service.
 
-from backend.app.models.peer import Peer
-from backend.app.schemas.peer import PeerCreate, PeerRead
-from backend.app.services.psk_crypto import decrypt_psk, encrypt_psk, get_psk_key
+This module exists for backward compatibility. New code should import
+from backend.app.services.ipsec_peer_service directly.
+"""
 
-
-def create_peer(session: Session, peer_in: PeerCreate, key: bytes | None = None) -> Peer:
-    resolved_key = key or get_psk_key()
-    encrypted, nonce = encrypt_psk(peer_in.psk, resolved_key)
-    peer = Peer(name=peer_in.name, pskEncrypted=encrypted, pskNonce=nonce)
-    session.add(peer)
-    session.commit()
-    session.refresh(peer)
-    return peer
-
-
-def to_peer_read(peer: Peer) -> PeerRead:
-    return PeerRead(peerId=peer.peerId, name=peer.name)
-
-
-def reveal_psk(peer: Peer, key: bytes | None = None) -> str:
-    resolved_key = key or get_psk_key()
-    return decrypt_psk(peer.pskEncrypted, peer.pskNonce, resolved_key)
+from backend.app.services.ipsec_peer_service import (  # noqa: F401
+    create_peer,
+    get_all_peers,
+    get_decrypted_psk,
+    get_peer_by_id,
+    get_peer_by_name,
+    update_peer,
+    validate_peer_config,
+)

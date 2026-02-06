@@ -58,24 +58,24 @@ development_status:
   epic-3: in-progress
   3-1-default-admin-login: done
   3-2-forced-password-change-on-first-login: done
-  3-3-https-with-tls-1-2-self-signed-cert: in-progress
-  3-4-api-authentication-with-jwt: backlog
+  3-3-https-with-tls-1-2-self-signed-cert: done
+  3-4-api-authentication-with-jwt: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-configure-and-view-interface-settings: backlog
-  4-2-add-ipsec-peer: backlog
-  4-3-delete-ipsec-peer: backlog
-  4-4-add-route-for-a-peer: backlog
-  4-5-delete-route: backlog
-  4-6-confirm-peer-operational-state: backlog
+  epic-4: in-progress
+  4-1-configure-and-view-interface-settings: done
+  4-2-add-ipsec-peer: done
+  4-3-delete-ipsec-peer: done
+  4-4-add-route-for-a-peer: done
+  4-5-delete-route: done
+  4-6-confirm-peer-operational-state: review
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-1-tunnel-status-and-interface-statistics: backlog
-  5-2-dynamically-add-tunnels: backlog
-  5-3-dynamically-remove-tunnels: backlog
-  5-4-validate-tunnel-traffic-flow: backlog
-  5-5-operational-rest-api-for-automation: backlog
-  5-6-complete-api-and-user-documentation: backlog
+  epic-5: in-progress
+  5-1-tunnel-status-and-interface-statistics: done
+  5-2-dynamically-add-tunnels: done
+  5-3-dynamically-remove-tunnels: done
+  5-4-validate-tunnel-traffic-flow: done
+  5-5-operational-rest-api-for-automation: done
+  5-6-complete-api-and-user-documentation: done
   epic-5-retrospective: optional

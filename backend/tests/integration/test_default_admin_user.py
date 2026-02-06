@@ -43,14 +43,14 @@ class TestDefaultAdminUser:
         assert password_hash.startswith("$argon2id$")
 
     def test_admin_password_verifies(self, db_session):
-        """Test that admin password 'admin' verifies correctly."""
+        """Test that admin password 'changeme' verifies correctly."""
         result = db_session.execute(
             text("SELECT passwordHash FROM users WHERE username = 'admin'")
         )
         row = result.fetchone()
         assert row is not None
         password_hash = row[0]
-        assert verify_password("admin", password_hash) is True
+        assert verify_password("changeme", password_hash) is True
 
     def test_wrong_password_fails(self, db_session):
         """Test that wrong password fails verification."""

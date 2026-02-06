@@ -1,6 +1,7 @@
-# Security Scan Results (Placeholder)
+# Security Scan Results
 
-These results are pending until the appliance image is packaged and scans are executed in the lab.
+This file tracks the aggregate scan outcome for V1.0 security validation.
+As of 2026-02-06, no scan outputs have been collected in this workspace.
 
 ## Planned Artifacts
 
@@ -10,10 +11,11 @@ These results are pending until the appliance image is packaged and scans are ex
 
 ## Summary
 
-- Findings: TBD after scans
-- Severities: TBD after scans
-- Affected endpoints: TBD after scans
+- Findings: none recorded yet
+- Severities: none recorded yet
+- Affected endpoints: not evaluated yet
 
 ## Notes
 
-This placeholder will be replaced with actual scan outputs and a summary once the virtual image is available.
+Update this file immediately after scan execution and include links to each raw
+artifact saved under `docs/security/`.

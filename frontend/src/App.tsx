@@ -10,7 +10,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { InterfacesPage } from './pages/InterfacesPage'
 import { LoginPage } from './pages/LoginPage'
+import { PeersPage } from './pages/PeersPage'
+import { RoutesPage } from './pages/RoutesPage'
 
 export function App() {
   return (
@@ -30,6 +33,30 @@ export function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interfaces"
+          element={
+            <ProtectedRoute>
+              <InterfacesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/peers"
+          element={
+            <ProtectedRoute>
+              <PeersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/routes"
+          element={
+            <ProtectedRoute>
+              <RoutesPage />
             </ProtectedRoute>
           }
         />

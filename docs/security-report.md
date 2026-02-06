@@ -2,7 +2,9 @@
 
 ## Summary
 
-This report documents the planned security testing for the V1.0 release candidate and records results as they become available.
+This report captures the V1.0 security test gate and current execution status.
+As of 2026-02-06, lab security scans have not been executed from this repository
+workspace because a packaged appliance image has not yet been provided for scan execution.
 
 ## Scope
 
@@ -23,11 +25,11 @@ This report documents the planned security testing for the V1.0 release candidat
 
 ### Build and Configuration
 
-- Build ID: TBD (capture at scan time)
-- Image SHA: TBD (capture at scan time)
-- Appliance version: TBD (capture at scan time)
-- Source commit: TBD (capture at scan time)
-- Configuration: TBD (capture at scan time)
+- Build ID: not assigned yet (image packaging pending)
+- Image SHA: not available yet (image packaging pending)
+- Appliance version: V1.0 candidate
+- Source commit: `034592c`
+- Configuration: lab defaults, MGMT HTTPS access only
 
 ## Methodology
 
@@ -38,15 +40,15 @@ This report documents the planned security testing for the V1.0 release candidat
 
 ## Tools and Versions
 
-- nmap: TBD (capture at scan time)
-- OWASP ZAP: TBD (capture at scan time)
-- sqlmap: TBD (capture at scan time)
+- nmap: to be captured at scan run time
+- OWASP ZAP: to be captured at scan run time
+- sqlmap: to be captured at scan run time
 
 ## Results Summary
 
-- Status: Pending scan execution after appliance image packaging.
-- Findings: TBD after scans.
-- Affected endpoints: TBD after scans.
+- Status: not executed yet (blocked on packaged appliance image)
+- Findings: none recorded yet
+- Affected endpoints: not evaluated yet
 
 ## Critical Vulnerabilities
 
@@ -65,7 +67,7 @@ Startup isolation validation runs on boot and reports status in the UI banner; i
 
 ## Remediation Log
 
-- TBD (only populated if findings require remediation)
+- No remediations recorded yet (no scan findings collected).
 
 ## Raw Artifacts
 

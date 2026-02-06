@@ -33,7 +33,7 @@ def db_session():
     session = Session()
     yield session
     # Cleanup: Reset admin password to default state
-    new_hash = hash_password("admin")
+    new_hash = hash_password("changeme")
     session.execute(
         text(
             "UPDATE users SET passwordHash = :hash, requirePasswordChange = TRUE "
@@ -49,7 +49,7 @@ def auth_token(client):
     """Get a valid auth token by logging in as admin."""
     response = client.post(
         "/api/v1/auth/login",
-        json={"username": "admin", "password": "admin"},
+        json={"username": "admin", "password": "changeme"},
     )
     return response.json()["data"]["accessToken"]
 
@@ -62,7 +62,7 @@ class TestChangePasswordEndpoint:
         response = client.post(
             "/api/v1/auth/change-password",
             headers={"Authorization": f"Bearer {auth_token}"},
-            json={"currentPassword": "admin", "newPassword": "newpass123"},
+            json={"currentPassword": "changeme", "newPassword": "newpass123"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -94,7 +94,7 @@ class TestChangePasswordEndpoint:
         response = client.post(
             "/api/v1/auth/change-password",
             headers={"Authorization": f"Bearer {auth_token}"},
-            json={"currentPassword": "admin", "newPassword": "short"},
+            json={"currentPassword": "changeme", "newPassword": "short"},
         )
         assert response.status_code == 422
 
@@ -104,7 +104,7 @@ class TestChangePasswordEndpoint:
         response = client.post(
             "/api/v1/auth/change-password",
             headers={"Authorization": f"Bearer {auth_token}"},
-            json={"currentPassword": "admin", "newPassword": "securepass1"},
+            json={"currentPassword": "changeme", "newPassword": "securepass1"},
         )
         assert response.status_code == 200
 
@@ -130,7 +130,7 @@ class TestChangePasswordEndpoint:
         """Test change password endpoint requires authentication."""
         response = client.post(
             "/api/v1/auth/change-password",
-            json={"currentPassword": "admin", "newPassword": "newpass123"},
+            json={"currentPassword": "changeme", "newPassword": "newpass123"},
         )
         assert response.status_code in (401, 403)
 
@@ -139,7 +139,7 @@ class TestChangePasswordEndpoint:
         response = client.post(
             "/api/v1/auth/change-password",
             headers={"Authorization": "Bearer invalid.token.here"},
-            json={"currentPassword": "admin", "newPassword": "newpass123"},
+            json={"currentPassword": "changeme", "newPassword": "newpass123"},
         )
         assert response.status_code == 401
 

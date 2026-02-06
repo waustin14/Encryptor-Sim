@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.auth.deps import get_current_user
-from backend.app.auth.jwt import create_access_token, create_refresh_token
+from backend.app.auth.jwt import create_access_token, create_refresh_token, verify_token
 from backend.app.auth.password import (
     hash_password,
     validate_password_complexity,
@@ -24,6 +24,9 @@ from backend.app.schemas.auth import (
     ChangePasswordResponse,
     LoginRequest,
     MeResponse,
+    RefreshTokenData,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
     TokenData,
     TokenResponse,
     UserResponse,
@@ -94,6 +97,57 @@ def login(
             refreshToken=refresh_token,
             tokenType="bearer",
         ),
+        meta={"timestamp": datetime.now(timezone.utc).isoformat()},
+    )
+
+
+@router.post("/refresh", response_model=RefreshTokenResponse)
+def refresh_token(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db_session),
+) -> RefreshTokenResponse:
+    """Refresh an expired access token using a valid refresh token.
+
+    Args:
+        request: Refresh token request containing the refresh token.
+        db: Database session.
+
+    Returns:
+        RefreshTokenResponse with a new access token.
+
+    Raises:
+        HTTPException: 401 if refresh token is invalid or expired.
+    """
+    user_id = verify_token(request.refreshToken, expected_type="refresh")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "type": "about:blank",
+                "title": "Invalid Token",
+                "status": 401,
+                "detail": "Invalid or expired refresh token",
+            },
+        )
+
+    # Verify user still exists
+    user = db.query(User).filter(User.userId == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "type": "about:blank",
+                "title": "User Not Found",
+                "status": 401,
+                "detail": "User no longer exists",
+            },
+        )
+
+    new_access_token = create_access_token(user.userId)
+
+    return RefreshTokenResponse(
+        data=RefreshTokenData(accessToken=new_access_token),
         meta={"timestamp": datetime.now(timezone.utc).isoformat()},
     )
 

@@ -1,6 +1,6 @@
 # Story 3.3: HTTPS with TLS 1.2+ Self-Signed Cert
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -71,18 +71,17 @@ So that management traffic is encrypted.
 
 **Git Hygiene & Story Isolation Issues:**
 
-- [ ] [AI-Review][CRITICAL] Separate Story 3.2 and Story 3.3 changes into distinct git commits
+- [x] [AI-Review][CRITICAL] Separate Story 3.2 and Story 3.3 changes into distinct git commits
   - Story 3.2 files: 14 files with password change functionality (see File List [S3.2] markers)
   - Story 3.3 files: 4 pure Story 3.3 files + 1 mixed file
-  - Current state: Both stories mixed in uncommitted changes, violates story isolation
-  - Recommendation: Create Story 3.2 commit first, then Story 3.3 commit second
+  - ✅ RESOLVED: Stories separated into two distinct commits
+  - Story 3.2 committed first, Story 3.3 committed second
   - Reference: See File List section for complete breakdown
 
-- [ ] [AI-Review][HIGH] Create git commit for Story 3.3 once separated from Story 3.2
-  - Currently no commit exists for Story 3.3 (last commit e669bca is Story 3.1)
-  - All work exists only as uncommitted changes
-  - Prevents clean reversion, archaeology, and story tracking
-  - Commit message should reference Story 3.3 and ACs implemented
+- [x] [AI-Review][HIGH] Create git commit for Story 3.3 once separated from Story 3.2
+  - ✅ RESOLVED: Story 3.3 committed with proper message and AC references
+  - Clean git history now exists for both Story 3.2 and Story 3.3
+  - Enables clean reversion, archaeology, and story tracking
 
 ## Dev Notes
 
@@ -864,4 +863,5 @@ No debug issues encountered. Pre-existing 13 test failures in `backend/tests/uni
 ## Change Log
 
 - 2026-01-29: Story 3.3 implementation complete. Enhanced test coverage for Tasks 1-3, implemented Tasks 4-6. 45 tests covering all 4 ACs (TLS 1.2+, self-signed cert, HTTPS port 443, HTTP port 80 blocked).
-- 2026-01-29: **Code Review Completed (Adversarial)** - Found 6 issues (1 CRITICAL, 2 HIGH, 2 MEDIUM, 1 LOW). All acceptance criteria validated as IMPLEMENTED and TESTED. **Critical finding:** Story 3.2 and Story 3.3 work mixed in uncommitted changes. Fixed issues #2, #4, #5, #6 by updating File List documentation and clarifying Story 3.1 dependencies. Added 2 action items for git commit hygiene (issues #1, #3). Story Status: Keeping as "in-progress" until git commits separated per action items.
+- 2026-01-29: **Code Review Completed (Adversarial)** - Found 6 issues (1 CRITICAL, 2 HIGH, 2 MEDIUM, 1 LOW). All acceptance criteria validated as IMPLEMENTED and TESTED. **Critical finding:** Story 3.2 and Story 3.3 work mixed in uncommitted changes. Fixed issues #2, #4, #5, #6 by updating File List documentation and clarifying Story 3.1 dependencies. Added 2 action items for git commit hygiene (issues #1, #3).
+- 2026-01-29: **Action Items Resolved** - Stories 3.2 and 3.3 successfully separated into distinct git commits. Story 3.2 committed first (password change functionality), Story 3.3 committed second (HTTPS configuration and tests). All code review findings addressed. **Story Status: DONE** ✅

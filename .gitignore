@@ -3,6 +3,8 @@
 .pytest_cache/
 __pycache__/
 frontend/node_modules/
+node_modules/
+**/.vite/
 _bmad/
 _bmad-output/
 .claude/

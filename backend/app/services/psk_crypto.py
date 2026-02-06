@@ -1,55 +1,51 @@
-from __future__ import annotations
+"""PSK encryption service using Fernet symmetric encryption.
+
+Encrypts pre-shared keys before database storage and decrypts
+them only when needed for daemon communication.
+"""
 
 import base64
-import binascii
-import os
-from functools import lru_cache
+import hashlib
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.fernet import Fernet
 
 from backend.app.config import get_settings
 
-NONCE_SIZE = 12
-KEY_SIZE = 32
+
+def _get_fernet() -> Fernet:
+    """Get Fernet instance using the configured encryption key.
+
+    The PSK_ENCRYPTION_KEY from settings is hashed to produce
+    a valid 32-byte Fernet key.
+    """
+    raw_key = get_settings().psk_encryption_key.encode("utf-8")
+    # Derive a 32-byte key via SHA-256, then base64-encode for Fernet
+    derived = hashlib.sha256(raw_key).digest()
+    fernet_key = base64.urlsafe_b64encode(derived)
+    return Fernet(fernet_key)
 
 
-def _looks_like_hex(value: str) -> bool:
-    if len(value) % 2 != 0:
-        return False
-    return all(char in "0123456789abcdefABCDEF" for char in value)
+def encrypt_psk(plaintext: str) -> str:
+    """Encrypt a PSK for database storage.
+
+    Args:
+        plaintext: The raw pre-shared key.
+
+    Returns:
+        Base64-encoded encrypted string.
+    """
+    f = _get_fernet()
+    return f.encrypt(plaintext.encode("utf-8")).decode("utf-8")
 
 
-def parse_psk_key(key_value: str) -> bytes:
-    if _looks_like_hex(key_value):
-        try:
-            decoded = bytes.fromhex(key_value)
-            if len(decoded) == KEY_SIZE:
-                return decoded
-        except ValueError:
-            pass
-    try:
-        decoded = base64.b64decode(key_value, validate=True)
-    except binascii.Error:
-        decoded = bytes.fromhex(key_value)
-    if len(decoded) != KEY_SIZE:
-        raise ValueError("PSK encryption key must be 32 bytes after decoding")
-    return decoded
+def decrypt_psk(ciphertext: str) -> str:
+    """Decrypt a PSK from database storage.
 
+    Args:
+        ciphertext: The encrypted PSK string from the database.
 
-@lru_cache(maxsize=1)
-def get_psk_key() -> bytes:
-    settings = get_settings()
-    return parse_psk_key(settings.psk_encryption_key)
-
-
-def encrypt_psk(psk: str, key: bytes) -> tuple[bytes, bytes]:
-    nonce = os.urandom(NONCE_SIZE)
-    aesgcm = AESGCM(key)
-    ciphertext = aesgcm.encrypt(nonce, psk.encode("utf-8"), None)
-    return ciphertext, nonce
-
-
-def decrypt_psk(ciphertext: bytes, nonce: bytes, key: bytes) -> str:
-    aesgcm = AESGCM(key)
-    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-    return plaintext.decode("utf-8")
+    Returns:
+        The original plaintext PSK.
+    """
+    f = _get_fernet()
+    return f.decrypt(ciphertext.encode("utf-8")).decode("utf-8")

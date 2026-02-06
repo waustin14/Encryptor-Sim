@@ -36,7 +36,7 @@ def upgrade() -> None:
 
     # Seed default admin user with hashed password (idempotent)
     ph = PasswordHasher()
-    admin_password_hash = ph.hash("admin")
+    admin_password_hash = ph.hash("changeme")
 
     # Check if admin user already exists before inserting
     conn = op.get_bind()

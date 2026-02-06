@@ -27,7 +27,7 @@ class TestLoginEndpoint:
         """Test login with valid credentials returns tokens."""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -40,7 +40,7 @@ class TestLoginEndpoint:
         """Test login with invalid username returns 401."""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "wronguser", "password": "admin"},
+            json={"username": "wronguser", "password": "changeme"},
         )
         assert response.status_code == 401
         error = response.json()
@@ -59,7 +59,7 @@ class TestLoginEndpoint:
         """Test login with missing username returns 422."""
         response = client.post(
             "/api/v1/auth/login",
-            json={"password": "admin"},
+            json={"password": "changeme"},
         )
         assert response.status_code == 422
 
@@ -82,7 +82,7 @@ class TestLoginEndpoint:
 
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert response.status_code == 200
         data = response.json()["data"]
@@ -111,7 +111,7 @@ class TestLoginEndpoint:
         # Perform login
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert response.status_code == 200
 
@@ -133,7 +133,7 @@ class TestLoginEndpoint:
         # Both invalid username and invalid password should return same error
         response_bad_user = client.post(
             "/api/v1/auth/login",
-            json={"username": "nonexistent", "password": "admin"},
+            json={"username": "nonexistent", "password": "changeme"},
         )
         response_bad_pass = client.post(
             "/api/v1/auth/login",
@@ -157,7 +157,7 @@ class TestLogoutEndpoint:
         # First login to get a token
         login_response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert login_response.status_code == 200
         access_token = login_response.json()["data"]["accessToken"]
@@ -192,7 +192,7 @@ class TestLogoutEndpoint:
         # First login to get a token
         login_response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert login_response.status_code == 200
         access_token = login_response.json()["data"]["accessToken"]
@@ -228,7 +228,7 @@ class TestProtectedEndpoints:
         # First login to get a token
         login_response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "admin"},
+            json={"username": "admin", "password": "changeme"},
         )
         assert login_response.status_code == 200
         access_token = login_response.json()["data"]["accessToken"]

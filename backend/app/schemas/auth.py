@@ -56,6 +56,25 @@ class MeResponse(BaseModel):
     meta: dict[str, Any] = Field(default_factory=dict)
 
 
+class RefreshTokenRequest(BaseModel):
+    """Refresh token request for obtaining a new access token."""
+
+    refreshToken: str = Field(..., min_length=1)
+
+
+class RefreshTokenData(BaseModel):
+    """New access token data returned from refresh."""
+
+    accessToken: str = Field(..., description="New short-lived access token (1 hour)")
+
+
+class RefreshTokenResponse(BaseModel):
+    """Refresh token response with envelope."""
+
+    data: RefreshTokenData
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
 class ChangePasswordRequest(BaseModel):
     """Password change request."""
 
