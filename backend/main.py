@@ -13,6 +13,7 @@ from backend.app.api.monitoring import router as monitoring_router
 from backend.app.api.peers import router as peers_router
 from backend.app.api.routes import router as routes_router
 from backend.app.api.system import router as system_router
+from backend.app.config import get_settings
 from backend.app.db.session import create_session_factory
 from backend.app.services.daemon_ipc import send_command
 from backend.app.services.isolation_validation_service import record_validation_result
@@ -27,7 +28,8 @@ def sync_validation_result_from_daemon() -> None:
         response = send_command("get_validation_result")
         result = response.get("result")
         if result is not None:
-            session_factory = create_session_factory()
+            settings = get_settings()
+            session_factory = create_session_factory(settings.database_url)
             session = session_factory()
             try:
                 record_validation_result(session, result)

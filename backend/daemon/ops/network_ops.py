@@ -363,6 +363,7 @@ def restore_interface_configs_from_db(
         Dict with 'restored' list of interface names and 'failed' list.
     """
     # Import here to avoid circular dependency
+    from backend.app.config import get_settings
     from backend.app.db.session import create_session_factory
     from backend.app.models.interface import Interface
 
@@ -370,7 +371,8 @@ def restore_interface_configs_from_db(
     failed = []
 
     try:
-        session_factory = create_session_factory()
+        settings = get_settings()
+        session_factory = create_session_factory(settings.database_url)
         session = session_factory()
 
         try:
