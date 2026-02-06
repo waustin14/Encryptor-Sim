@@ -49,7 +49,7 @@ export function IsolationStatusBanner({
   const primaryFailure = status?.failures?.[0]
 
   return (
-    <Stack spacing={4}>
+    <Stack gap={4}>
       <Box
         border="1px solid"
         borderColor="gray.200"
@@ -58,7 +58,7 @@ export function IsolationStatusBanner({
         background="whiteAlpha.900"
         boxShadow="lg"
       >
-        <HStack spacing={4} justify="space-between" flexWrap="wrap">
+        <HStack gap={4} justify="space-between" flexWrap="wrap">
           <Box>
             <Text fontSize="sm" color="gray.500" textTransform="uppercase" letterSpacing="0.08em">
               Isolation Validation

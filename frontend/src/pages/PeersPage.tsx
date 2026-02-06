@@ -10,7 +10,7 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react'
-import { toaster } from '@chakra-ui/react/toaster'
+import { toaster } from '../components/ui/toaster'
 
 import { PeerCard } from '../components/PeerCard'
 import { PeerForm } from '../components/PeerForm'
