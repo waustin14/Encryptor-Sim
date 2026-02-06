@@ -392,6 +392,18 @@ generate_psk_encryption_key() {
     log "PSK encryption key generated successfully"
 }
 
+generate_jwt_secret_key() {
+    local mnt="${WORK_DIR}/mnt"
+
+    log "Generating JWT secret key..."
+
+    mkdir -p "${mnt}/etc/encryptor-sim"
+    chroot "$mnt" openssl rand -hex 32 > "${mnt}/etc/encryptor-sim/jwt.key"
+    chmod 0600 "${mnt}/etc/encryptor-sim/jwt.key"
+
+    log "JWT secret key generated successfully"
+}
+
 build_frontend() {
     if [[ ! -d "${PROJECT_ROOT}/frontend" ]]; then
         log "Warning: frontend directory not found, skipping build"
@@ -648,6 +660,7 @@ main() {
     install_application
     generate_tls_certificate
     generate_psk_encryption_key
+    generate_jwt_secret_key
     install_rootfs_overlay
     install_openrc_services
     install_bootloader

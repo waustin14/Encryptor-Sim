@@ -48,6 +48,14 @@ start_pre() {
         return 1
     fi
 
+    # Load JWT secret for Settings.secret_key
+    if [ -f /etc/encryptor-sim/jwt.key ]; then
+        export APP_SECRET_KEY="$(cat /etc/encryptor-sim/jwt.key)"
+    else
+        eerror "JWT secret key not found at /etc/encryptor-sim/jwt.key"
+        return 1
+    fi
+
     # Ensure log directory exists
     checkpath --directory --owner root:root --mode 0755 /var/log/encryptor-sim
 
