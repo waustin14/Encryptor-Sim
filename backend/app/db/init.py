@@ -1,11 +1,11 @@
 """Database initialization for application startup.
 
-Creates tables and seeds the default admin user if not present.
+Creates tables and seeds the default admin user and interfaces if not present.
 """
 
 import logging
 
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.app.auth.password import hash_password
@@ -15,12 +15,19 @@ from backend.app.models import Base
 
 logger = logging.getLogger(__name__)
 
+# Default network interfaces matching the alembic seed migration
+_DEFAULT_INTERFACES = [
+    {"name": "CT", "namespace": "ns_ct", "device": "eth1"},
+    {"name": "PT", "namespace": "ns_pt", "device": "eth2"},
+    {"name": "MGMT", "namespace": "ns_mgmt", "device": "eth0"},
+]
+
 
 def init_db() -> None:
-    """Create database tables and seed default admin user.
+    """Create database tables and seed default data.
 
     Safe to call on every startup — only creates missing tables
-    and only inserts the admin user if it doesn't already exist.
+    and only inserts seed data if it doesn't already exist.
     """
     settings = get_settings()
     engine = get_engine(settings.database_url, connect_args={"check_same_thread": False})
@@ -29,8 +36,8 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified")
 
-    # Seed default admin user if not present
     with Session(engine) as session:
+        # Seed default admin user if not present
         result = session.execute(
             text("SELECT COUNT(*) FROM users WHERE username = :username"),
             {"username": "admin"},
@@ -48,7 +55,19 @@ def init_db() -> None:
                     "requirePasswordChange": True,
                 },
             )
-            session.commit()
             logger.info("Default admin user created")
-        else:
-            logger.info("Admin user already exists")
+
+        # Seed default interfaces if not present
+        result = session.execute(text("SELECT COUNT(*) FROM interfaces"))
+        if result.scalar() == 0:
+            for iface in _DEFAULT_INTERFACES:
+                session.execute(
+                    text(
+                        "INSERT INTO interfaces (name, namespace, device) "
+                        "VALUES (:name, :namespace, :device)"
+                    ),
+                    iface,
+                )
+            logger.info("Default interfaces created (CT, PT, MGMT)")
+
+        session.commit()
