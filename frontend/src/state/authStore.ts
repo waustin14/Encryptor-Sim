@@ -26,6 +26,22 @@ interface AuthState {
   clearAuth: () => void
 }
 
+async function parseResponseBody(response: Response): Promise<{
+  data: unknown | null
+  rawText: string
+}> {
+  const rawText = await response.text()
+  if (!rawText) {
+    return { data: null, rawText: '' }
+  }
+
+  try {
+    return { data: JSON.parse(rawText), rawText }
+  } catch {
+    return { data: null, rawText }
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
@@ -38,13 +54,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     })
+    const { data: responseBody, rawText } = await parseResponseBody(response)
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail?.detail || error.detail || 'Login failed')
+      if (responseBody && typeof responseBody === 'object' && 'detail' in responseBody) {
+        const detail = (responseBody as { detail?: unknown }).detail
+        if (typeof detail === 'object' && detail !== null && 'detail' in detail) {
+          const nestedDetail = (detail as { detail?: unknown }).detail
+          if (typeof nestedDetail === 'string') {
+            throw new Error(nestedDetail)
+          }
+        }
+        if (typeof detail === 'string') {
+          throw new Error(detail)
+        }
+      }
+
+      if (rawText.trim()) {
+        throw new Error(`Login failed: unexpected response from API`)
+      }
+
+      throw new Error('Login failed')
     }
 
-    const { data } = await response.json()
+    if (!responseBody || typeof responseBody !== 'object' || !('data' in responseBody)) {
+      throw new Error('Login failed: API returned invalid response')
+    }
+
+    const { data } = responseBody as {
+      data?: { accessToken?: string; refreshToken?: string }
+    }
+    if (!data?.accessToken || !data?.refreshToken) {
+      throw new Error('Login failed: API returned incomplete token data')
+    }
+
     set({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
@@ -59,8 +102,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     })
 
     if (profileResponse.ok) {
-      const { data: userData } = await profileResponse.json()
-      set({ user: userData })
+      const { data: profileBody } = await parseResponseBody(profileResponse)
+      if (profileBody && typeof profileBody === 'object' && 'data' in profileBody) {
+        const userData = (profileBody as { data?: User }).data
+        if (userData) {
+          set({ user: userData })
+        }
+      }
     }
   },
 
@@ -99,16 +147,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       },
       body: JSON.stringify({ currentPassword, newPassword }),
     })
+    const { data: responseBody } = await parseResponseBody(response)
 
     if (!response.ok) {
-      const error = await response.json()
       // Handle RFC 7807 error format and fallbacks
-      const errorMessage =
-        typeof error.detail === 'object' && error.detail !== null
-          ? error.detail.detail || 'Password change failed'
-          : typeof error.detail === 'string'
-            ? error.detail
-            : 'Password change failed'
+      let errorMessage = 'Password change failed'
+      if (responseBody && typeof responseBody === 'object' && 'detail' in responseBody) {
+        const detail = (responseBody as { detail?: unknown }).detail
+        if (typeof detail === 'object' && detail !== null && 'detail' in detail) {
+          const nestedDetail = (detail as { detail?: unknown }).detail
+          if (typeof nestedDetail === 'string') {
+            errorMessage = nestedDetail
+          }
+        } else if (typeof detail === 'string') {
+          errorMessage = detail
+        }
+      }
+
       throw new Error(errorMessage)
     }
 

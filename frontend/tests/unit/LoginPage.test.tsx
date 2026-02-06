@@ -71,7 +71,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />)
 
     // Use getAllByText in case there are multiple matches
-    const hints = screen.getAllByText(/default credentials/i)
+    const hints = screen.getAllByText(/default credentials:\s*admin\s*\/\s*changeme/i)
     expect(hints.length).toBeGreaterThan(0)
   })
 

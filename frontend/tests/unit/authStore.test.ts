@@ -6,6 +6,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import { useAuthStore } from '../../src/state/authStore'
 
+function mockJsonResponse(payload: unknown, ok = true) {
+  const raw = JSON.stringify(payload)
+  return {
+    ok,
+    json: () => Promise.resolve(payload),
+    text: () => Promise.resolve(raw),
+  }
+}
+
 describe('authStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -60,18 +69,16 @@ describe('authStore', () => {
 
   it('login sets tokens and isAuthenticated on success', async () => {
     global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          data: { accessToken: 'access', refreshToken: 'refresh' }
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          data: { userId: 1, username: 'admin', requirePasswordChange: false }
-        }),
-      })
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          data: { accessToken: 'access', refreshToken: 'refresh' },
+        })
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          data: { userId: 1, username: 'admin', requirePasswordChange: false },
+        })
+      )
 
     const { login } = useAuthStore.getState()
     await login('admin', 'admin')
@@ -84,10 +91,9 @@ describe('authStore', () => {
   })
 
   it('login throws on failure', async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ detail: { detail: 'Invalid credentials' } }),
-    })
+    global.fetch = vi.fn().mockResolvedValueOnce(
+      mockJsonResponse({ detail: { detail: 'Invalid credentials' } }, false)
+    )
 
     const { login } = useAuthStore.getState()
 
@@ -104,9 +110,8 @@ describe('authStore', () => {
     })
 
     global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        data: { message: 'Password changed successfully', requirePasswordChange: false }
+      ...mockJsonResponse({
+        data: { message: 'Password changed successfully', requirePasswordChange: false },
       }),
     })
 
@@ -126,12 +131,14 @@ describe('authStore', () => {
       isAuthenticated: true,
     })
 
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({
-        detail: { detail: 'Current password is incorrect' }
-      }),
-    })
+    global.fetch = vi.fn().mockResolvedValueOnce(
+      mockJsonResponse(
+        {
+          detail: { detail: 'Current password is incorrect' },
+        },
+        false
+      )
+    )
 
     const { changePassword } = useAuthStore.getState()
     await expect(changePassword('wrong', 'newpass123')).rejects.toThrow(
@@ -141,18 +148,16 @@ describe('authStore', () => {
 
   it('login uses relative URL for HTTPS compatibility', async () => {
     global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          data: { accessToken: 'access', refreshToken: 'refresh' }
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          data: { userId: 1, username: 'admin', requirePasswordChange: false }
-        }),
-      })
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          data: { accessToken: 'access', refreshToken: 'refresh' },
+        })
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          data: { userId: 1, username: 'admin', requirePasswordChange: false },
+        })
+      )
 
     const { login } = useAuthStore.getState()
     await login('admin', 'admin')
@@ -172,12 +177,9 @@ describe('authStore', () => {
       isAuthenticated: true,
     })
 
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        data: { message: 'Password changed successfully' }
-      }),
-    })
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockJsonResponse({ data: { message: 'Password changed successfully' } }))
 
     const { changePassword } = useAuthStore.getState()
     await changePassword('admin', 'newpass123')
@@ -196,10 +198,7 @@ describe('authStore', () => {
       isAuthenticated: true,
     })
 
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ data: { message: 'Logged out' } }),
-    })
+    global.fetch = vi.fn().mockResolvedValueOnce(mockJsonResponse({ data: { message: 'Logged out' } }))
 
     const { logout } = useAuthStore.getState()
     await logout()
@@ -219,10 +218,7 @@ describe('authStore', () => {
       isAuthenticated: true,
     })
 
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ data: { message: 'Logged out' } }),
-    })
+    global.fetch = vi.fn().mockResolvedValueOnce(mockJsonResponse({ data: { message: 'Logged out' } }))
 
     const { logout } = useAuthStore.getState()
     await logout()

@@ -114,7 +114,7 @@ export function LoginPage() {
           </form>
 
           <Text fontSize="sm" color="gray.500">
-            Default credentials: admin / admin
+            Default credentials: admin / changeme
           </Text>
         </Stack>
       </Box>
