@@ -14,6 +14,7 @@ from backend.app.api.peers import router as peers_router
 from backend.app.api.routes import router as routes_router
 from backend.app.api.system import router as system_router
 from backend.app.config import get_settings
+from backend.app.db.init import init_db
 from backend.app.db.session import create_session_factory
 from backend.app.services.daemon_ipc import send_command
 from backend.app.services.isolation_validation_service import record_validation_result
@@ -44,6 +45,7 @@ _background_tasks: list[asyncio.Task] = []
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    init_db()
     sync_validation_result_from_daemon()
 
     # Start background polling tasks for monitoring
