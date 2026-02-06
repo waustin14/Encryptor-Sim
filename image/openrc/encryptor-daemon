@@ -30,7 +30,7 @@ export PYTHONPATH="/opt/encryptor-sim"
 
 # Dependencies
 depend() {
-    need encryptor-namespaces
+    need encryptor-namespaces strongswan
     before encryptor-api
     after networking
 }
@@ -71,6 +71,12 @@ start_pre() {
     # Verify strongSwan is available
     if ! command -v swanctl >/dev/null 2>&1; then
         eerror "strongSwan (swanctl) not found"
+        return 1
+    fi
+
+    # Verify charon VICI socket is available (strongSwan daemon running)
+    if [ ! -S /var/run/charon.vici ]; then
+        eerror "charon VICI socket not found — strongSwan daemon not running"
         return 1
     fi
 

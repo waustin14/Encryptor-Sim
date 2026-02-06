@@ -27,7 +27,7 @@ def test_handle_command_enforce_isolation_calls_ops(monkeypatch: pytest.MonkeyPa
 
     assert recorded["namespaces"] == ["ns_pt", "ns_ct"]
     assert recorded["allowed_ifnames"] == ["pt", "ct"]
-    assert result == {"status": "ok"}
+    assert result == {"applied": True}
 
 
 def test_handle_command_unknown_raises() -> None:
@@ -46,8 +46,7 @@ def test_handle_command_get_validation_result_returns_result(
 
     result = handle_command("get_validation_result")
 
-    assert result["status"] == "ok"
-    assert result["result"] == fake_result
+    assert result == fake_result
 
 
 def test_handle_command_get_validation_result_returns_none_when_no_result(
@@ -59,5 +58,4 @@ def test_handle_command_get_validation_result_returns_none_when_no_result(
 
     result = handle_command("get_validation_result")
 
-    assert result["status"] == "ok"
-    assert result["result"] is None
+    assert result is None

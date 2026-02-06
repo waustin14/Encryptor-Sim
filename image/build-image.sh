@@ -346,6 +346,7 @@ EOF
     chroot "$mnt" rc-update add bootmisc boot
     chroot "$mnt" rc-update add networking boot
 
+    chroot "$mnt" rc-update add strongswan default
     chroot "$mnt" rc-update add sshd default
 
     chroot "$mnt" rc-update add mount-ro shutdown

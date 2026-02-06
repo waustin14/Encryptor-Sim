@@ -101,6 +101,8 @@ connections {{
     {name} {{
         version = {version_num}
         remote_addrs = {remote_ip}
+        dpd_delay = {dpd_delay or 30}s
+        dpd_timeout = {dpd_timeout or 150}s
         local {{
             auth = psk
         }}
@@ -111,8 +113,6 @@ connections {{
             {name}-child {{
                 mode = tunnel
                 dpd_action = {dpd_action or 'restart'}
-                dpd_delay = {dpd_delay or 30}s
-                dpd_timeout = {dpd_timeout or 150}s
                 rekey_time = {rekey_time or 3600}s
             }}
         }}

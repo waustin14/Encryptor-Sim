@@ -35,13 +35,10 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         elif payload and "allowed_ifnames" in payload:
             allowed_ifnames = list(payload["allowed_ifnames"])
         apply_isolation_rules(namespaces=namespaces, allowed_ifnames=allowed_ifnames)
-        return {"status": "ok"}
+        return {"applied": True}
 
     if command == "get_validation_result":
-        result = get_latest_validation_result()
-        if result is None:
-            return {"status": "ok", "result": None}
-        return {"status": "ok", "result": result}
+        return get_latest_validation_result()
 
     if command == "configure_interface":
         if not payload:
@@ -68,7 +65,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         isolation = verify_isolation_after_config()
         result["isolation"] = isolation
 
-        return {"status": "ok", "result": result}
+        return result
 
     if command == "configure_peer":
         if not payload:
@@ -88,7 +85,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
             dpd_timeout=payload.get("dpd_timeout", 150),
             rekey_time=payload.get("rekey_time", 3600),
         )
-        return {"status": "ok", "result": result}
+        return result
 
     if command == "initiate_peer":
         if not payload:
@@ -96,8 +93,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if "name" not in payload:
             raise CommandError("Missing required field: name")
 
-        result = initiate_peer(name=payload["name"])
-        return {"status": "ok", "result": result}
+        return initiate_peer(name=payload["name"])
 
     if command == "teardown_peer":
         if not payload:
@@ -105,8 +101,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if "name" not in payload:
             raise CommandError("Missing required field: name")
 
-        result = teardown_peer(name=payload["name"])
-        return {"status": "ok", "result": result}
+        return teardown_peer(name=payload["name"])
 
     if command == "remove_peer_config":
         if not payload:
@@ -114,8 +109,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if "name" not in payload:
             raise CommandError("Missing required field: name")
 
-        result = remove_peer_config(name=payload["name"])
-        return {"status": "ok", "result": result}
+        return remove_peer_config(name=payload["name"])
 
     if command == "update_routes":
         if not payload:
@@ -134,18 +128,15 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         reload_result = reload_peer_config(name=payload["peer_name"])
         result["reload"] = reload_result.get("message", "")
 
-        return {"status": "ok", "result": result}
+        return result
 
     if command == "get_tunnel_status":
-        result = get_tunnel_status()
-        return {"status": "ok", "result": result}
+        return get_tunnel_status()
 
     if command == "get_tunnel_telemetry":
-        result = get_tunnel_telemetry()
-        return {"status": "ok", "result": result}
+        return get_tunnel_telemetry()
 
     if command == "get_interface_stats":
-        result = get_interface_stats()
-        return {"status": "ok", "result": result}
+        return get_interface_stats()
 
     raise CommandError(f"Unknown command: {command}")
