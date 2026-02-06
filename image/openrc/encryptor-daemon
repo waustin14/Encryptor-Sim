@@ -74,9 +74,18 @@ start_pre() {
         return 1
     fi
 
-    # Verify charon VICI socket is available (strongSwan daemon running)
+    # Wait for charon VICI socket (strongSwan may still be initializing)
+    local vici_tries=0
+    local vici_max=10
+    while [ $vici_tries -lt $vici_max ]; do
+        if [ -S /var/run/charon.vici ]; then
+            break
+        fi
+        sleep 1
+        vici_tries=$((vici_tries + 1))
+    done
     if [ ! -S /var/run/charon.vici ]; then
-        eerror "charon VICI socket not found — strongSwan daemon not running"
+        eerror "charon VICI socket not found after ${vici_max}s — strongSwan daemon not running"
         return 1
     fi
 
