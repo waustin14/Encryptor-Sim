@@ -284,10 +284,10 @@ class TestNetworkInterfaces:
         """Network interfaces file exists."""
         assert interfaces_file.exists(), "interfaces file not found"
 
-    def test_interfaces_defines_eth0_dhcp(self, interfaces_file: Path) -> None:
-        """eth0 (MGMT) is configured for DHCP."""
+    def test_interfaces_defines_eth0_manual(self, interfaces_file: Path) -> None:
+        """eth0 (MGMT) is manual in root namespace; DHCP runs in ns_mgmt."""
         content = interfaces_file.read_text()
-        assert "iface eth0 inet dhcp" in content, "eth0 must use DHCP"
+        assert "iface eth0 inet manual" in content, "eth0 must be manual in root namespace"
 
     def test_interfaces_defines_eth1_manual(self, interfaces_file: Path) -> None:
         """eth1 (CT) is configured as manual."""

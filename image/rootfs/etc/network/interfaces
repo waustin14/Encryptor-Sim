@@ -9,11 +9,12 @@
 auto lo
 iface lo inet loopback
 
-# Management interface - DHCP enabled by default
-# Provides initial connectivity for web UI and API access
+# Management interface - leave manual in root namespace.
+# DHCP is started by encryptor-namespaces after eth0 is moved into ns_mgmt.
 auto eth0
-iface eth0 inet dhcp
-    hostname encryptor-sim
+iface eth0 inet manual
+    up ip link set $IFACE up
+    down ip link set $IFACE down
 
 # Crypto Text interface - manually configured via UI
 # Connects to the encrypted network side
