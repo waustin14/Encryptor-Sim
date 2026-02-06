@@ -73,6 +73,15 @@ export function DashboardPage() {
               >
                 {isConnected ? 'Live' : 'Disconnected'}
               </Badge>
+              <Button onClick={() => navigate('/interfaces')} variant="outline" size="sm">
+                Interfaces
+              </Button>
+              <Button onClick={() => navigate('/peers')} variant="outline" size="sm">
+                Peers
+              </Button>
+              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
+                Routes
+              </Button>
               <Button
                 onClick={handleLogout}
                 variant="outline"

@@ -162,6 +162,12 @@ export function InterfacesPage() {
               <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
                 Dashboard
               </Button>
+              <Button onClick={() => navigate('/peers')} variant="outline" size="sm">
+                Peers
+              </Button>
+              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
+                Routes
+              </Button>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 Logout{user ? ` (${user.username})` : ''}
               </Button>

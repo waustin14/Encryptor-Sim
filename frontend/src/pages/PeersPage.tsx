@@ -169,6 +169,9 @@ export function PeersPage() {
               <Button onClick={() => navigate('/interfaces')} variant="outline" size="sm">
                 Interfaces
               </Button>
+              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
+                Routes
+              </Button>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 Logout{user ? ` (${user.username})` : ''}
               </Button>
