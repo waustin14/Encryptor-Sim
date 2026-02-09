@@ -13,3 +13,4 @@ _bmad-output/
 *.db-journal
 *.db-shm
 *.db-wal
+test-topology/
