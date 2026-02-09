@@ -30,7 +30,7 @@ export PYTHONPATH="/opt/encryptor-sim"
 
 # Dependencies
 depend() {
-    need encryptor-namespaces strongswan
+    need encryptor-namespaces encryptor-strongswan
     before encryptor-api
     after networking
 }

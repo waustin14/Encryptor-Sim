@@ -139,8 +139,8 @@ class TestInitiatePeerSuccess:
             assert "initiated" in data["meta"]["initiationMessage"].lower()
 
             # Verify daemon was called with correct payload (AC: #3)
-            mock_send.assert_called_once_with(
-                "initiate_peer", {"name": "test-ready-peer"}
+            mock_send.assert_called_with(
+                "initiate_peer", {"name": "test-ready-peer"}, timeout=12.0
             )
 
     def test_initiate_idempotent_already_up(

@@ -10,10 +10,12 @@ from backend.daemon.ops.nftables import apply_isolation_rules, build_isolation_r
 def test_build_isolation_ruleset_includes_required_allow_rules() -> None:
     ruleset = build_isolation_ruleset()
 
-    assert 'meta iifname { "pt", "ct" } meta oifname { "pt", "ct" }' in ruleset
+    assert 'meta iifname { "pt", "ct", "veth_ct_default" } meta oifname { "pt", "ct", "veth_ct_default" }' in ruleset
     assert "udp dport { 500, 4500 } accept" in ruleset
     assert "ip protocol esp accept" in ruleset
     assert "policy drop" in ruleset
+    assert 'meta iifname "xfrm*" meta oifname "veth_ct_default" accept' in ruleset
+    assert 'meta iifname "veth_ct_default" meta oifname "xfrm*" accept' in ruleset
 
 
 def test_apply_isolation_rules_only_targets_pt_ct() -> None:

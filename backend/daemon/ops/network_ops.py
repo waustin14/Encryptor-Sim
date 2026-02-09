@@ -364,6 +364,7 @@ def restore_interface_configs_from_db(
     """
     # Import here to avoid circular dependency
     from backend.app.config import get_settings
+    from backend.app.db.init import init_db
     from backend.app.db.session import create_session_factory
     from backend.app.models.interface import Interface
 
@@ -371,6 +372,9 @@ def restore_interface_configs_from_db(
     failed = []
 
     try:
+        # Ensure database tables exist (daemon starts before the API)
+        init_db()
+
         settings = get_settings()
         session_factory = create_session_factory(settings.database_url)
         session = session_factory()
@@ -403,5 +407,74 @@ def restore_interface_configs_from_db(
 
     except Exception as e:
         logger.error(f"Failed to restore interface configs: {e}")
+
+    return {"restored": restored, "failed": failed}
+
+
+def restore_xfrm_interfaces_from_db(
+    *,
+    runner: Runner = subprocess.run,
+) -> dict[str, list[int]]:
+    """Restore XFRM interfaces and routes for configured peers on daemon startup.
+
+    For each peer with an active configuration file, recreates the xfrm
+    interface and re-adds routes.
+
+    Args:
+        runner: Command runner (injectable for testing).
+
+    Returns:
+        Dict with 'restored' list of peer IDs and 'failed' list.
+    """
+    from backend.app.config import get_settings
+    from backend.app.db.init import init_db
+    from backend.app.db.session import create_session_factory
+    from backend.app.models.peer import Peer
+    from backend.app.models.route import Route
+    from backend.daemon.ops.xfrm_ops import (
+        add_pt_return_route,
+        add_tunnel_route,
+        create_xfrm_interface,
+    )
+
+    restored: list[int] = []
+    failed: list[int] = []
+
+    try:
+        init_db()
+        settings = get_settings()
+        session_factory = create_session_factory(settings.database_url)
+        session = session_factory()
+
+        try:
+            peers = session.query(Peer).filter(Peer.enabled.is_(True)).all()
+
+            for peer in peers:
+                try:
+                    create_xfrm_interface(peer.peerId, peer.peerId, runner=runner)
+
+                    # Re-add routes for this peer
+                    routes = session.query(Route).filter(Route.peerId == peer.peerId).all()
+                    for route in routes:
+                        try:
+                            add_tunnel_route(peer.peerId, route.destinationCidr, runner=runner)
+                            add_pt_return_route(route.destinationCidr, runner=runner)
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to restore route {route.destinationCidr} "
+                                f"for peer {peer.name}: {e}"
+                            )
+
+                    restored.append(peer.peerId)
+                    logger.info(f"Restored XFRM interface for peer {peer.name}")
+                except Exception as e:
+                    failed.append(peer.peerId)
+                    logger.error(f"Failed to restore XFRM for peer {peer.name}: {e}")
+
+        finally:
+            session.close()
+
+    except Exception as e:
+        logger.error(f"Failed to restore XFRM interfaces: {e}")
 
     return {"restored": restored, "failed": failed}

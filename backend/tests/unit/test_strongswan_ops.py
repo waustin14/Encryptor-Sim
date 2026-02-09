@@ -86,6 +86,27 @@ class TestGenerateSwanctlConfig:
         )
         assert "mode = tunnel" in config
 
+    def test_includes_if_id_when_peer_id_provided(self) -> None:
+        config = generate_swanctl_config(
+            name="xfrm-peer",
+            remote_ip="10.5.5.5",
+            psk="psk",
+            ike_version="ikev2",
+            peer_id=7,
+        )
+        assert "if_id_in = 7" in config
+        assert "if_id_out = 7" in config
+
+    def test_no_if_id_when_peer_id_omitted(self) -> None:
+        config = generate_swanctl_config(
+            name="no-xfrm",
+            remote_ip="10.5.5.5",
+            psk="psk",
+            ike_version="ikev2",
+        )
+        assert "if_id_in" not in config
+        assert "if_id_out" not in config
+
 
 class TestValidateSwanctlSyntax:
     """Tests for config syntax validation."""
@@ -217,9 +238,9 @@ class TestInitiatePeer:
             return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
         initiate_peer(name="cmd-peer", runner=mock_runner)
-        # Should call load-conns first, then initiate
-        assert called_with[0] == ["swanctl", "--load-conns"]
-        assert called_with[1] == ["swanctl", "--initiate", "--child", "cmd-peer-child"]
+        # Should call load-conns first, then initiate (both in ns_ct namespace)
+        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--load-conns"]
+        assert called_with[1] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--initiate", "--child", "cmd-peer-child"]
 
 
 class TestTeardownPeer:
@@ -573,7 +594,7 @@ class TestGetTunnelStatus:
             runner=mock_runner,
             peer_id_lookup=self._lookup_peer_ids,
         )
-        assert called_with[0] == ["swanctl", "--list-sas"]
+        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--list-sas"]
 
 
 class TestGetTunnelTelemetry:
@@ -823,7 +844,7 @@ class TestSpacesInPeerName:
             return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
         initiate_peer(name="Site A", runner=mock_runner)
-        assert called_with[1] == ["swanctl", "--initiate", "--child", "Site_A-child"]
+        assert called_with[1] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--initiate", "--child", "Site_A-child"]
 
     def test_teardown_uses_sanitized_child_name(self) -> None:
         """Verify teardown command uses sanitized CHILD_SA name."""
@@ -834,7 +855,7 @@ class TestSpacesInPeerName:
             return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
         teardown_peer(name="Site A", runner=mock_runner)
-        assert called_with[0] == ["swanctl", "--terminate", "--child", "Site_A-child"]
+        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--terminate", "--child", "Site_A-child"]
 
     def test_configure_peer_writes_sanitized_filename(self, tmp_path) -> None:
         """Verify config file uses sanitized name."""

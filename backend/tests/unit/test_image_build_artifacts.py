@@ -238,6 +238,7 @@ class TestOpenRCServices:
         """All required OpenRC services exist."""
         required_services = [
             "encryptor-namespaces",
+            "encryptor-strongswan",
             "encryptor-daemon",
             "encryptor-api",
         ]
@@ -259,6 +260,15 @@ class TestOpenRCServices:
         service = openrc_dir / "encryptor-namespaces"
         content = service.read_text()
         assert "before encryptor-daemon" in content, "Namespaces must run before daemon"
+
+    def test_namespace_service_creates_veth_pair(self, openrc_dir: Path) -> None:
+        """Namespace service creates veth pair for xfrm routing."""
+        service = openrc_dir / "encryptor-namespaces"
+        content = service.read_text()
+        assert "veth_ct_default" in content, "Must create veth_ct_default"
+        assert "veth_ct_pt" in content, "Must create veth_ct_pt"
+        assert "169.254.0.1/30" in content, "Must assign link-local IP to default side"
+        assert "169.254.0.2/30" in content, "Must assign link-local IP to ns_pt side"
 
     def test_daemon_service_depends_on_namespaces(self, openrc_dir: Path) -> None:
         """Daemon service depends on namespace service."""

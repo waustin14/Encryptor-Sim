@@ -205,6 +205,18 @@ start() {
     move_interface_to_namespace "$IF_PT" "$NS_PT" || true
     move_interface_to_namespace "$IF_MGMT" "$NS_MGMT" || true
 
+    # Create veth pair connecting default namespace to ns_pt
+    # Used for routing decrypted traffic from xfrmi interfaces to plaintext namespace
+    einfo "Creating veth pair: veth_ct_default <-> veth_ct_pt"
+    ip link add veth_ct_default type veth peer name veth_ct_pt
+    ip link set veth_ct_pt netns "$NS_PT"
+
+    # Assign link-local IPs to veth pair
+    ip addr add 169.254.0.1/30 dev veth_ct_default
+    ip link set veth_ct_default up
+    ip netns exec "$NS_PT" ip addr add 169.254.0.2/30 dev veth_ct_pt
+    ip netns exec "$NS_PT" ip link set veth_ct_pt up
+
     # Configure MGMT interface based on mode (Story 2.4: Static IP support)
     local mgmt_mode
     mgmt_mode=$(get_mgmt_mode)

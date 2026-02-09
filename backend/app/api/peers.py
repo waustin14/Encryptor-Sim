@@ -80,6 +80,7 @@ def _configure_peer_in_daemon(peer: Peer, decrypted_psk: str) -> dict | None:
                 "dpd_delay": peer.dpdDelay,
                 "dpd_timeout": peer.dpdTimeout,
                 "rekey_time": peer.rekeyTime,
+                "peer_id": peer.peerId,
             },
         )
         return response
@@ -327,7 +328,7 @@ async def update_peer_endpoint(
 
         # Teardown tunnel (best-effort)
         try:
-            response = send_command("teardown_peer", {"name": updated.name})
+            response = send_command("teardown_peer", {"name": updated.name, "peer_id": updated.peerId}, timeout=8.0)
             teardown_result = response.get("result", {})
             logger.info(f"Tunnel torn down for peer {updated.name}")
         except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
@@ -336,7 +337,7 @@ async def update_peer_endpoint(
 
         # Remove strongSwan config (best-effort)
         try:
-            response = send_command("remove_peer_config", {"name": updated.name})
+            response = send_command("remove_peer_config", {"name": updated.name, "peer_id": updated.peerId})
             remove_result = response.get("result", {})
             logger.info(f"Config removed for peer {updated.name}")
         except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
@@ -374,7 +375,7 @@ async def update_peer_endpoint(
                 ]
                 send_command(
                     "update_routes",
-                    {"peer_name": updated.name, "routes": route_dicts},
+                    {"peer_name": updated.name, "routes": route_dicts, "peer_id": updated.peerId},
                 )
                 logger.info(f"Peer {updated.name} enabled and routes synced")
             except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
@@ -436,7 +437,7 @@ async def initiate_peer_tunnel(
     # Attempt to initiate tunnel via daemon
     try:
         logger.info(f"Initiating tunnel for peer {peer.name} (ID: {peer_id})")
-        response = send_command("initiate_peer", {"name": peer.name})
+        response = send_command("initiate_peer", {"name": peer.name}, timeout=12.0)
         daemon_status = response.get("status", "ok")
         initiation_result = response.get("result", {}) if daemon_status == "ok" else {}
         initiation_status = initiation_result.get("status", "error")
@@ -548,7 +549,7 @@ async def delete_peer_endpoint(
 
     # Teardown active tunnel (best-effort via daemon)
     try:
-        response = send_command("teardown_peer", {"name": peer_name})
+        response = send_command("teardown_peer", {"name": peer_name, "peer_id": peer_id}, timeout=8.0)
         teardown_result = response.get("result", {})
     except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
         daemon_available = False
@@ -558,7 +559,7 @@ async def delete_peer_endpoint(
 
     # Remove strongSwan config file (best-effort via daemon)
     try:
-        response = send_command("remove_peer_config", {"name": peer_name})
+        response = send_command("remove_peer_config", {"name": peer_name, "peer_id": peer_id})
         remove_result = response.get("result", {})
     except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
         daemon_available = False

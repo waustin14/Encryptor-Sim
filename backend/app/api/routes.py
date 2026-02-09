@@ -64,19 +64,22 @@ def _build_route_response(route) -> RouteResponse:
     )
 
 
-def _update_routes_in_daemon(peer_name: str, routes: list) -> dict | None:
+def _update_routes_in_daemon(peer_name: str, routes: list, peer_id: int | None = None) -> dict | None:
     """Send route configuration to daemon for strongSwan traffic selector update.
 
     Best-effort: logs errors but does not fail the API call.
     """
     try:
         route_dicts = [{"destination_cidr": r.destinationCidr} for r in routes]
+        payload: dict = {
+            "peer_name": peer_name,
+            "routes": route_dicts,
+        }
+        if peer_id is not None:
+            payload["peer_id"] = peer_id
         response = send_command(
             "update_routes",
-            {
-                "peer_name": peer_name,
-                "routes": route_dicts,
-            },
+            payload,
         )
         return response
     except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
@@ -118,7 +121,7 @@ async def create_route_endpoint(
     meta: dict = {}
     if peer.enabled:
         all_peer_routes = get_routes_for_peer(db, request.peerId)
-        daemon_response = _update_routes_in_daemon(peer.name, all_peer_routes)
+        daemon_response = _update_routes_in_daemon(peer.name, all_peer_routes, peer_id=peer.peerId)
 
         meta["daemonAvailable"] = daemon_response is not None
         if daemon_response is None:
@@ -200,7 +203,7 @@ async def update_route_endpoint(
     meta: dict = {}
     if peer and peer.enabled:
         all_peer_routes = get_routes_for_peer(db, updated.peerId)
-        daemon_response = _update_routes_in_daemon(peer_name, all_peer_routes)
+        daemon_response = _update_routes_in_daemon(peer_name, all_peer_routes, peer_id=updated.peerId)
 
         meta["daemonAvailable"] = daemon_response is not None
         if daemon_response is None:
@@ -254,7 +257,7 @@ async def delete_route_endpoint(
     peer = get_peer_by_id(db, peer_id)
     if peer and peer.enabled:
         remaining_routes = get_routes_for_peer(db, peer_id)
-        daemon_response = _update_routes_in_daemon(peer_name, remaining_routes)
+        daemon_response = _update_routes_in_daemon(peer_name, remaining_routes, peer_id=peer_id)
         meta["daemonAvailable"] = daemon_response is not None
         if daemon_response is None:
             meta["warning"] = "Route deleted from database but daemon unavailable for traffic selector update"

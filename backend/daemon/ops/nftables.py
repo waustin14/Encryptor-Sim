@@ -3,7 +3,7 @@ import shutil
 import subprocess
 
 DEFAULT_NAMESPACES = ("ns_pt", "ns_ct")
-DEFAULT_ISOLATION_IFNAMES = ("pt", "ct")
+DEFAULT_ISOLATION_IFNAMES = ("pt", "ct", "veth_ct_default")
 ISOLATION_NAMESPACES = {"ns_pt", "ns_ct"}
 
 
@@ -30,6 +30,8 @@ add chain inet isolation forward {{ type filter hook forward priority 0; policy 
 add rule inet isolation forward ct state established,related meta iifname {ifname_set} meta oifname {ifname_set} accept
 add rule inet isolation forward meta iifname {ifname_set} meta oifname {ifname_set} udp dport {{ 500, 4500 }} accept
 add rule inet isolation forward meta iifname {ifname_set} meta oifname {ifname_set} ip protocol esp accept
+add rule inet isolation forward meta iifname "xfrm*" meta oifname "veth_ct_default" accept
+add rule inet isolation forward meta iifname "veth_ct_default" meta oifname "xfrm*" accept
 """.lstrip()
 
 

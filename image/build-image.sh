@@ -346,7 +346,8 @@ EOF
     chroot "$mnt" rc-update add bootmisc boot
     chroot "$mnt" rc-update add networking boot
 
-    chroot "$mnt" rc-update add strongswan default
+    # Note: stock strongswan service is NOT added here — our custom
+    # encryptor-strongswan service wraps charon to run inside ns_ct.
     chroot "$mnt" rc-update add sshd default
 
     chroot "$mnt" rc-update add mount-ro shutdown

@@ -1,0 +1,72 @@
+#!/sbin/openrc-run
+# OpenRC service: encryptor-strongswan
+# Starts strongSwan charon daemon inside the CT (ciphertext) namespace
+#
+# The stock strongswan service runs charon in the default namespace,
+# but our architecture moves eth1 (CT interface) into ns_ct. IKE/IPsec
+# traffic must originate from ns_ct where the CT interface lives, so
+# charon must run inside that namespace.
+#
+# This service replaces the stock strongswan service.
+
+name="encryptor-strongswan"
+description="strongSwan IKE daemon (in CT namespace)"
+
+command="/sbin/ip"
+command_args="netns exec ns_ct /usr/libexec/ipsec/charon"
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
+
+output_log="/var/log/encryptor-sim/strongswan.log"
+error_log="/var/log/encryptor-sim/strongswan.error.log"
+
+depend() {
+    need encryptor-namespaces
+    before encryptor-daemon
+    after networking
+}
+
+start_pre() {
+    # Ensure log directory exists
+    checkpath --directory --owner root:root --mode 0755 /var/log/encryptor-sim
+
+    # Verify CT namespace exists
+    if ! ip netns list | grep -q "ns_ct"; then
+        eerror "CT namespace (ns_ct) not found — encryptor-namespaces must run first"
+        return 1
+    fi
+
+    # Verify charon binary exists
+    if [ ! -x /usr/libexec/ipsec/charon ]; then
+        eerror "charon not found at /usr/libexec/ipsec/charon"
+        return 1
+    fi
+
+    # Clean up stale PID file
+    if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" >/dev/null 2>&1; then
+        rm -f "$pidfile"
+    fi
+
+    return 0
+}
+
+start_post() {
+    # Wait for charon VICI socket to appear
+    local tries=0
+    local max_tries=15
+    while [ $tries -lt $max_tries ]; do
+        if [ -S /var/run/charon.vici ]; then
+            einfo "charon VICI socket ready after ${tries}s"
+            return 0
+        fi
+        sleep 1
+        tries=$((tries + 1))
+    done
+    eerror "charon VICI socket not available after ${max_tries}s"
+    return 1
+}
+
+stop_post() {
+    rm -f /var/run/charon.vici
+}

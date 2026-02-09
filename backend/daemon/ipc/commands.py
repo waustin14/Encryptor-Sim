@@ -18,6 +18,13 @@ from backend.daemon.ops.strongswan_ops import (
     teardown_peer,
     write_routes_config,
 )
+from backend.daemon.ops.xfrm_ops import (
+    add_pt_return_route,
+    add_tunnel_route,
+    delete_xfrm_interface,
+    remove_pt_return_route,
+    remove_tunnel_routes,
+)
 
 
 class CommandError(ValueError):
@@ -84,6 +91,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
             dpd_delay=payload.get("dpd_delay", 30),
             dpd_timeout=payload.get("dpd_timeout", 150),
             rekey_time=payload.get("rekey_time", 3600),
+            peer_id=payload.get("peer_id"),
         )
         return result
 
@@ -101,7 +109,7 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if "name" not in payload:
             raise CommandError("Missing required field: name")
 
-        return teardown_peer(name=payload["name"])
+        return teardown_peer(name=payload["name"], peer_id=payload.get("peer_id"))
 
     if command == "remove_peer_config":
         if not payload:
@@ -109,7 +117,15 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if "name" not in payload:
             raise CommandError("Missing required field: name")
 
-        return remove_peer_config(name=payload["name"])
+        result = remove_peer_config(name=payload["name"])
+
+        # Clean up XFRM interface if peer_id provided
+        peer_id = payload.get("peer_id")
+        if peer_id is not None:
+            remove_tunnel_routes(peer_id)
+            delete_xfrm_interface(peer_id)
+
+        return result
 
     if command == "update_routes":
         if not payload:
@@ -127,6 +143,21 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         # Reload connections to apply route changes
         reload_result = reload_peer_config(name=payload["peer_name"])
         result["reload"] = reload_result.get("message", "")
+
+        # Update XFRM and ns_pt routes if peer_id provided
+        peer_id = payload.get("peer_id")
+        if peer_id is not None:
+            # Remove old routes for this peer's xfrm interface
+            remove_tunnel_routes(peer_id)
+            # Add new routes
+            for route in payload["routes"]:
+                cidr = route.get("destination_cidr")
+                if cidr:
+                    try:
+                        add_tunnel_route(peer_id, cidr)
+                        add_pt_return_route(cidr)
+                    except Exception:
+                        pass  # Best-effort; logged by xfrm_ops
 
         return result
 
