@@ -13,7 +13,7 @@ name="encryptor-strongswan"
 description="strongSwan IKE daemon (in CT namespace)"
 
 command="/sbin/ip"
-command_args="netns exec ns_ct /usr/libexec/ipsec/charon"
+command_args="netns exec ns_ct /usr/lib/strongswan/charon"
 command_background="yes"
 pidfile="/run/${RC_SVCNAME}.pid"
 start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
@@ -38,8 +38,8 @@ start_pre() {
     fi
 
     # Verify charon binary exists
-    if [ ! -x /usr/libexec/ipsec/charon ]; then
-        eerror "charon not found at /usr/libexec/ipsec/charon"
+    if [ ! -x /usr/lib/strongswan/charon ]; then
+        eerror "charon not found at /usr/lib/strongswan/charon"
         return 1
     fi
 
