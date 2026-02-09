@@ -151,9 +151,12 @@ detect_accel() {
             fi
             ;;
         Linux)
-            if [[ -r /dev/kvm ]]; then
+            if [[ -r /dev/kvm ]] && grep -qEw '(vmx|svm)' /proc/cpuinfo 2>/dev/null; then
                 echo "kvm"
             else
+                if [[ -r /dev/kvm ]]; then
+                    warn "/dev/kvm exists but CPU virtualization extensions not found. Enable nested virtualization in Proxmox (set CPU type to 'host'). Falling back to TCG (slow)."
+                fi
                 echo "tcg"
             fi
             ;;
@@ -268,7 +271,7 @@ launch_encryptor() {
         -device "virtio-net-pci,netdev=pt,mac=${mac_pt}" \
         -serial "unix:$(console_sock "$name"),server,nowait" \
         -monitor "unix:$(monitor_sock "$name"),server,nowait" \
-        -nographic \
+        -display none \
         -pidfile "$(pid_file "$name")" \
         -daemonize
 
@@ -307,7 +310,7 @@ launch_alpine() {
         -device "virtio-net-pci,netdev=pt,mac=${mac}" \
         -serial "unix:$(console_sock "$name"),server,nowait" \
         -monitor "unix:$(monitor_sock "$name"),server,nowait" \
-        -nographic \
+        -display none \
         -pidfile "$(pid_file "$name")" \
         -daemonize
 
