@@ -126,6 +126,10 @@ start() {
         service_started
         return 0
     fi
+    # Clean up stale state from a crashed daemon so OpenRC allows restart
+    rm -f "$pidfile"
+    rm -f /run/encryptor-sim/daemon.sock
+    mark_service_stopped
     start-stop-daemon --start --background \
         --make-pidfile --pidfile "$pidfile" \
         --chdir "$directory" \

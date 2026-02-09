@@ -7,6 +7,7 @@ os.environ.setdefault("APP_PSK_ENCRYPTION_KEY", "test-key-for-testing-32bytes1")
 os.environ.setdefault("APP_SECRET_KEY", "test-secret-key-for-jwt-testing")
 
 from backend.daemon.ops.strongswan_ops import (
+    _sanitize_name,
     configure_peer,
     generate_swanctl_config,
     get_tunnel_status,
@@ -775,3 +776,84 @@ class TestGetTunnelTelemetry:
         assert result[1]["status"] == "up"
         assert result[1]["bytesIn"] == 0  # Invalid value defaults to 0
         assert result[1]["bytesOut"] == 2048  # Valid value parsed
+
+
+class TestSanitizeName:
+    """Tests for peer name sanitization for strongSwan identifiers."""
+
+    def test_no_change_for_simple_name(self) -> None:
+        assert _sanitize_name("site-a") == "site-a"
+
+    def test_spaces_replaced_with_underscores(self) -> None:
+        assert _sanitize_name("Site A") == "Site_A"
+
+    def test_multiple_spaces(self) -> None:
+        assert _sanitize_name("My Remote Site") == "My_Remote_Site"
+
+    def test_special_characters_replaced(self) -> None:
+        assert _sanitize_name("peer@office#1") == "peer_office_1"
+
+    def test_hyphens_and_underscores_preserved(self) -> None:
+        assert _sanitize_name("my-peer_name") == "my-peer_name"
+
+
+class TestSpacesInPeerName:
+    """Tests verifying that peer names with spaces work correctly."""
+
+    def test_config_uses_sanitized_identifiers(self) -> None:
+        """Verify config identifiers don't contain spaces."""
+        config = generate_swanctl_config(
+            name="Site A",
+            remote_ip="10.1.1.100",
+            psk="secret",
+            ike_version="ikev2",
+        )
+        assert "Site_A {" in config
+        assert "Site_A-child {" in config
+        assert "ike-Site_A {" in config
+        # Original name preserved in comment
+        assert "# Peer: Site A" in config
+
+    def test_initiate_uses_sanitized_child_name(self) -> None:
+        """Verify initiation command uses sanitized CHILD_SA name."""
+        called_with = []
+
+        def mock_runner(*args, **kwargs):
+            called_with.append(args[0])
+            return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
+
+        initiate_peer(name="Site A", runner=mock_runner)
+        assert called_with[1] == ["swanctl", "--initiate", "--child", "Site_A-child"]
+
+    def test_teardown_uses_sanitized_child_name(self) -> None:
+        """Verify teardown command uses sanitized CHILD_SA name."""
+        called_with = []
+
+        def mock_runner(*args, **kwargs):
+            called_with.append(args[0])
+            return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
+
+        teardown_peer(name="Site A", runner=mock_runner)
+        assert called_with[0] == ["swanctl", "--terminate", "--child", "Site_A-child"]
+
+    def test_configure_peer_writes_sanitized_filename(self, tmp_path) -> None:
+        """Verify config file uses sanitized name."""
+        result = configure_peer(
+            name="Site A",
+            remote_ip="10.1.1.1",
+            psk="secret",
+            ike_version="ikev2",
+            conf_dir=str(tmp_path),
+        )
+        assert result["status"] == "success"
+        assert (tmp_path / "Site_A.conf").exists()
+        assert not (tmp_path / "Site A.conf").exists()
+
+    def test_remove_peer_config_uses_sanitized_filename(self, tmp_path) -> None:
+        """Verify config removal uses sanitized filename."""
+        config_file = tmp_path / "Site_A.conf"
+        config_file.write_text("connections { }")
+
+        result = remove_peer_config(name="Site A", conf_dir=str(tmp_path))
+        assert result["status"] == "success"
+        assert not config_file.exists()

@@ -56,9 +56,14 @@ def handle_request(
             raise ValueError("Missing command")
         result = handler(command, payload)
         _write_message(connection, {"status": "ok", "result": result})
+    except BrokenPipeError:
+        logger.warning("Client disconnected before response could be sent")
     except Exception as exc:
         logger.exception(f"Error handling IPC request: {exc}")
-        _write_message(connection, {"status": "error", "error": str(exc)})
+        try:
+            _write_message(connection, {"status": "error", "error": str(exc)})
+        except BrokenPipeError:
+            logger.warning("Client disconnected before error response could be sent")
 
 
 def serve(
@@ -84,9 +89,12 @@ def serve(
         while not _shutdown_requested:
             try:
                 connection, _ = server.accept()
+            except socket.timeout:
+                continue
+            try:
                 connection.settimeout(connection_timeout)
                 with connection:
                     handle_request(connection, handler)
-            except socket.timeout:
-                continue
+            except Exception as exc:
+                logger.error(f"Unhandled error processing IPC request: {exc}")
         logger.info("Daemon IPC server shutdown complete")
