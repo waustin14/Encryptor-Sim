@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 Runner = Callable[..., subprocess.CompletedProcess]
 
 CT_NAMESPACE = "ns_ct"
+CT_DEVICE = "eth1"
 PT_NAMESPACE = "ns_pt"
 VETH_DEFAULT_IP = "169.254.0.1"
 XFRM_MTU = 1400
@@ -34,10 +35,12 @@ def create_xfrm_interface(
     *,
     runner: Runner = subprocess.run,
 ) -> str:
-    """Create an XFRM interface in the default namespace.
+    """Create an XFRM interface linked to ns_ct's SA database.
 
-    The xfrmi device is linked to ns_ct's underlying device via the if_id,
-    which strongSwan uses to associate CHILD_SAs with the interface.
+    The xfrmi device must be created inside ns_ct (where strongSwan installs
+    IPsec SAs) so the kernel can match packets against the correct SA database.
+    It is then moved to the default namespace for routing, but retains its
+    link to ns_ct's XFRM state.
 
     Args:
         peer_id: Peer identifier (used for device naming).
@@ -56,13 +59,26 @@ def create_xfrm_interface(
         check=False,
     )
 
-    # Create xfrmi device in default namespace, linked to ns_ct via if_id
+    # Create xfrmi device inside ns_ct, linked to the CT device (eth1).
+    # This binds the interface to ns_ct's XFRM SA/SP database.
     runner(
         [
+            "ip", "netns", "exec", CT_NAMESPACE,
             "ip", "link", "add", dev_name,
             "type", "xfrm",
-            "dev", "lo",
+            "dev", CT_DEVICE,
             "if_id", str(if_id),
+        ],
+        capture_output=True,
+        check=True,
+    )
+
+    # Move xfrmi device from ns_ct to the default namespace (PID 1).
+    # The interface retains its link-netns association with ns_ct.
+    runner(
+        [
+            "ip", "netns", "exec", CT_NAMESPACE,
+            "ip", "link", "set", dev_name, "netns", "1",
         ],
         capture_output=True,
         check=True,

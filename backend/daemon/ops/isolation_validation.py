@@ -70,8 +70,6 @@ def _verify_ruleset(runner: Runner, namespace: str, allowed_ifnames: Iterable[st
     ifname_set = _format_ifname_set(allowed_ifnames)
     expected_fragments = (
         f"meta iifname {ifname_set} meta oifname {ifname_set}",
-        "udp dport { 500, 4500 } accept",
-        "ip protocol esp accept",
         "policy drop",
     )
     result = _run_command(

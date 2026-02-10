@@ -45,17 +45,23 @@ class TestCreateXfrmInterface:
         assert result == "xfrm1"
         # First call: delete existing (idempotent cleanup)
         assert called_with[0] == ["ip", "link", "del", "xfrm1"]
-        # Second call: create xfrmi
+        # Second call: create xfrmi inside ns_ct linked to eth1
         assert called_with[1] == [
+            "ip", "netns", "exec", "ns_ct",
             "ip", "link", "add", "xfrm1",
             "type", "xfrm",
-            "dev", "lo",
+            "dev", "eth1",
             "if_id", "1",
         ]
-        # Third call: set MTU
-        assert called_with[2] == ["ip", "link", "set", "xfrm1", "mtu", "1400"]
-        # Fourth call: bring up
-        assert called_with[3] == ["ip", "link", "set", "xfrm1", "up"]
+        # Third call: move xfrmi from ns_ct to default namespace (PID 1)
+        assert called_with[2] == [
+            "ip", "netns", "exec", "ns_ct",
+            "ip", "link", "set", "xfrm1", "netns", "1",
+        ]
+        # Fourth call: set MTU
+        assert called_with[3] == ["ip", "link", "set", "xfrm1", "mtu", "1400"]
+        # Fifth call: bring up
+        assert called_with[4] == ["ip", "link", "set", "xfrm1", "up"]
 
     def test_uses_peer_id_for_naming(self) -> None:
         def mock_runner(*args, **kwargs):

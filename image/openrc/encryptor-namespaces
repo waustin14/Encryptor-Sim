@@ -192,8 +192,20 @@ start() {
     create_namespace "$NS_PT"
     create_namespace "$NS_MGMT"
 
-    # Enable IP forwarding in main namespace
+    # Enable IP forwarding in default namespace and ns_pt (both forward tunnel traffic).
+    # ns_pt forwards between eth2 (PT hosts) and veth_ct_pt (to default namespace).
+    # Default namespace forwards between veth_ct_default and xfrm interfaces.
     sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
+
+    # Disable reverse path filtering in default namespace.
+    # xfrm and veth interfaces use asymmetric routing paths — strict RP filtering
+    # (the default) drops valid tunnel traffic because the source address is not
+    # reachable via the receiving interface.  The effective rp_filter value is
+    # max(conf.all, conf.<iface>), so conf.all must be 0 for per-interface
+    # overrides to take effect.  Setting conf.default to 0 ensures dynamically
+    # created xfrm interfaces inherit the correct value.
+    sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null 2>&1
+    sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null 2>&1
 
     # Set up loopback in each namespace
     for ns in "$NS_CT" "$NS_PT" "$NS_MGMT"; do
@@ -216,6 +228,13 @@ start() {
     ip link set veth_ct_default up
     ip netns exec "$NS_PT" ip addr add 169.254.0.2/30 dev veth_ct_pt
     ip netns exec "$NS_PT" ip link set veth_ct_pt up
+
+    # Enable IP forwarding in ns_pt (forwards between eth2 and veth_ct_pt)
+    ip netns exec "$NS_PT" sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
+
+    # Disable reverse path filtering in ns_pt (same rationale as default namespace)
+    ip netns exec "$NS_PT" sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null 2>&1
+    ip netns exec "$NS_PT" sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null 2>&1
 
     # Configure MGMT interface based on mode (Story 2.4: Static IP support)
     local mgmt_mode
