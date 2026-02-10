@@ -318,12 +318,16 @@ def verify_isolation_after_config(
     Returns:
         Dict with verification status.
     """
-    for namespace in ("ns_pt", "ns_ct"):
-        result = runner(
-            [
+    for namespace in ("default", "ns_pt"):
+        if namespace == "default":
+            cmd = ["nft", "list", "chain", "inet", "isolation", "forward"]
+        else:
+            cmd = [
                 "ip", "netns", "exec", namespace, "nft", "list", "chain",
                 "inet", "isolation", "forward",
-            ],
+            ]
+        result = runner(
+            cmd,
             capture_output=True,
             text=True,
             check=False,

@@ -68,8 +68,10 @@ def _bring_interfaces_up(runner: Runner, namespace: str, veth: str, ip_address: 
 
 def _verify_ruleset(runner: Runner, namespace: str, allowed_ifnames: Iterable[str]) -> None:
     ifname_set = _format_ifname_set(allowed_ifnames)
+    # nft list output omits the "meta" keyword for well-known expressions
+    # like iifname/oifname, so match against the output format (no "meta").
     expected_fragments = (
-        f"meta iifname {ifname_set} meta oifname {ifname_set}",
+        f"iifname {ifname_set} oifname {ifname_set}",
         "policy drop",
     )
     result = _run_command(

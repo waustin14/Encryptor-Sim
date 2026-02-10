@@ -106,51 +106,34 @@ start_pre() {
 }
 
 start_post() {
-    # Wait for API to be responsive (uvicorn initialization takes time)
+    # Wait for uvicorn to bind to port 443 in ns_mgmt.
+    # We check the listening socket rather than hitting the /health endpoint
+    # because that endpoint requires authentication.
     local tries=0
     local max_tries=30
-    local mgmt_ip
     while [ $tries -lt $max_tries ]; do
-        # Health check must run inside ns_mgmt where the API listens
-        mgmt_ip=$(ip netns exec ns_mgmt ip -4 addr show eth0 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | head -n1)
-
-        if [ -n "$mgmt_ip" ]; then
-            if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null "https://${mgmt_ip}:443/api/v1/system/health" 2>/dev/null; then
-                # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
-                # API is now ready to accept requests - boot sequence complete
-                mkdir -p /var/run/encryptor
-                if [ ! -f /var/run/encryptor/boot-start ]; then
-                    ewarn "boot-start timestamp missing; creating fallback timestamp"
-                    date +%s.%N > /var/run/encryptor/boot-start
-                fi
-                date +%s.%N > /var/run/encryptor/boot-complete
-                einfo "API health endpoint reachable via MGMT IP ${mgmt_ip} after ${tries}s"
-                return 0
+        if ip netns exec ns_mgmt ss -ltn 2>/dev/null | grep -q ":443 "; then
+            # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
+            # API is now ready to accept requests - boot sequence complete
+            mkdir -p /var/run/encryptor
+            if [ ! -f /var/run/encryptor/boot-start ]; then
+                ewarn "boot-start timestamp missing; creating fallback timestamp"
+                date +%s.%N > /var/run/encryptor/boot-start
             fi
-        else
-            if ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null https://127.0.0.1:443/api/v1/system/health 2>/dev/null; then
-                # Record boot complete timestamp (Story 2.5: Boot Health Indicator)
-                mkdir -p /var/run/encryptor
-                if [ ! -f /var/run/encryptor/boot-start ]; then
-                    ewarn "boot-start timestamp missing; creating fallback timestamp"
-                    date +%s.%N > /var/run/encryptor/boot-start
-                fi
-                date +%s.%N > /var/run/encryptor/boot-complete
-                einfo "API health endpoint ready after ${tries}s"
-                return 0
-            fi
+            date +%s.%N > /var/run/encryptor/boot-complete
+            einfo "API listening on port 443 after ${tries}s"
+            return 0
         fi
         sleep 1
         tries=$((tries + 1))
     done
-    eerror "API health endpoint not available after ${max_tries}s"
+    eerror "API not listening on port 443 after ${max_tries}s"
     return 1
 }
 
 healthcheck() {
-    # Check if API is responding via HTTPS (run in ns_mgmt namespace)
-    # Use --no-check-certificate for self-signed cert
-    ip netns exec ns_mgmt wget -q --no-check-certificate -O /dev/null https://127.0.0.1:443/api/v1/system/health || return 1
+    # Check if uvicorn is listening on port 443 in ns_mgmt namespace
+    ip netns exec ns_mgmt ss -ltn 2>/dev/null | grep -q ":443 " || return 1
     return 0
 }
 

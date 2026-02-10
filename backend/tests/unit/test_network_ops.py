@@ -277,22 +277,18 @@ class TestVerifyIsolationAfterConfig:
         assert result["status"] == "fail"
         assert "policy" in result["message"]
 
-    def test_isolation_checks_both_namespaces(self):
-        """Verify both ns_pt and ns_ct are checked."""
+    def test_isolation_checks_default_and_ns_pt(self):
+        """Verify both default and ns_pt namespaces are checked."""
         runner = MagicMock()
         runner.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout="chain forward { policy drop; }"
         )
         verify_isolation_after_config(runner=runner)
         calls = runner.call_args_list
-        namespaces_checked = set()
-        for c in calls:
-            args = c[0][0]
-            if "ns_pt" in args:
-                namespaces_checked.add("ns_pt")
-            if "ns_ct" in args:
-                namespaces_checked.add("ns_ct")
-        assert namespaces_checked == {"ns_pt", "ns_ct"}
+        # First call should be for default namespace (no "ip netns exec")
+        assert calls[0][0][0][0] == "nft"
+        # Second call should be for ns_pt namespace
+        assert "ns_pt" in calls[1][0][0]
 
 
 # ---------------------------------------------------------------------------

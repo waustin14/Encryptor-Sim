@@ -3,7 +3,21 @@ import shutil
 import subprocess
 
 from backend.daemon.ops.isolation_validation import run_isolation_validation
-from backend.daemon.ops.nftables import build_isolation_ruleset
+
+
+def _fake_nft_list_output(ifnames: list[str]) -> str:
+    """Simulate nft list chain output (nft omits 'meta' keyword in output)."""
+    quoted = ", ".join(f'"{n}"' for n in ifnames)
+    ifname_set = f"{{ {quoted} }}"
+    return (
+        "table inet isolation {\n"
+        "    chain forward {\n"
+        "        type filter hook forward priority 0; policy drop;\n"
+        "        ct state established,related accept\n"
+        f"        iifname {ifname_set} oifname {ifname_set} accept\n"
+        "    }\n"
+        "}\n"
+    )
 
 
 class FakeRunner:
@@ -31,16 +45,16 @@ class FakeRunner:
             "inet",
             "isolation",
         ]:
-            rules = build_isolation_ruleset(["iso-val-test-a", "iso-val-test-b"])
-            return SimpleNamespace(returncode=0, stdout=rules, stderr="")
+            output = _fake_nft_list_output(["iso-val-test-a", "iso-val-test-b"])
+            return SimpleNamespace(returncode=0, stdout=output, stderr="")
         if cmd[:5] == ["ip", "netns", "exec", "iso-val-test-b", "nft"] and cmd[5:9] == [
             "list",
             "chain",
             "inet",
             "isolation",
         ]:
-            rules = build_isolation_ruleset(["iso-val-test-a", "iso-val-test-b"])
-            return SimpleNamespace(returncode=0, stdout=rules, stderr="")
+            output = _fake_nft_list_output(["iso-val-test-a", "iso-val-test-b"])
+            return SimpleNamespace(returncode=0, stdout=output, stderr="")
 
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
