@@ -13,7 +13,7 @@ type InterfaceStatsCardProps = {
 }
 
 const INTERFACE_LABELS: Record<string, string> = {
-  CT: 'Cleartext (CT)',
+  CT: 'Ciphertext (CT)',
   PT: 'Plaintext (PT)',
   MGMT: 'Management (MGMT)',
 }

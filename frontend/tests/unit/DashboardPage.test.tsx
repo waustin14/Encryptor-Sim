@@ -185,7 +185,7 @@ describe('DashboardPage', () => {
 
       renderDashboard()
 
-      expect(screen.getByText('Cleartext (CT)')).toBeTruthy()
+      expect(screen.getByText('Ciphertext (CT)')).toBeTruthy()
       expect(screen.getByText('Plaintext (PT)')).toBeTruthy()
     })
 

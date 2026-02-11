@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge, Box, Button, HStack, Stack, Text } from '@chakra-ui/react'
+import { Badge, Box, Button, HStack, IconButton, Menu, Portal, Stack, Text } from '@chakra-ui/react'
 import type { Peer } from '../state/peersStore'
 
 type PeerCardProps = {
@@ -139,42 +139,49 @@ export function PeerCard({ peer, onEdit, onDelete, onInitiate, onToggleEnabled }
             {peer.operationalStatus === 'ready' ? 'Ready' : 'Incomplete'}
           </Badge>
           {!confirmingDelete && !confirmingDisable && (
-            <>
-              <Button
-                size="xs"
-                colorPalette="orange"
-                variant="outline"
-                onClick={handleInitiate}
-                disabled={peer.operationalStatus !== 'ready' || initiating || !peer.enabled}
-                loading={initiating}
-                aria-label={`Bring up tunnel for ${peer.name}`}
-                data-testid="initiate-button"
-                title={!peer.enabled ? 'Enable peer to initiate tunnel' : undefined}
-              >
-                Bring Up Tunnel
-              </Button>
-              <Button
-                size="xs"
-                colorPalette={peer.enabled ? 'yellow' : 'green'}
-                variant="outline"
-                onClick={handleToggleEnabledClick}
-                disabled={toggling}
-                loading={toggling}
-                aria-label={peer.enabled ? `Disable peer ${peer.name}` : `Enable peer ${peer.name}`}
-                data-testid="toggle-enabled-button"
-              >
-                {peer.enabled ? 'Disable' : 'Enable'}
-              </Button>
-              <Button
-                size="xs"
-                colorPalette="red"
-                variant="outline"
-                onClick={handleDeleteClick}
-                aria-label={`Delete peer ${peer.name}`}
-              >
-                Delete
-              </Button>
-            </>
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <IconButton
+                  size="xs"
+                  variant="ghost"
+                  aria-label="Peer actions"
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid="peer-actions-menu"
+                >
+                  &#8942;
+                </IconButton>
+              </Menu.Trigger>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content>
+                    <Menu.Item
+                      value="initiate"
+                      disabled={peer.operationalStatus !== 'ready' || initiating || !peer.enabled}
+                      onClick={handleInitiate}
+                      data-testid="initiate-button"
+                    >
+                      Bring Up Tunnel
+                    </Menu.Item>
+                    <Menu.Item
+                      value="toggle"
+                      disabled={toggling}
+                      onClick={handleToggleEnabledClick}
+                      data-testid="toggle-enabled-button"
+                    >
+                      {peer.enabled ? 'Disable' : 'Enable'}
+                    </Menu.Item>
+                    <Menu.Item
+                      value="delete"
+                      color="red.600"
+                      onClick={handleDeleteClick}
+                      data-testid="delete-button"
+                    >
+                      Delete
+                    </Menu.Item>
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
+            </Menu.Root>
           )}
         </HStack>
       </HStack>

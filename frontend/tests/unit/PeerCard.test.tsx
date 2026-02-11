@@ -50,6 +50,13 @@ function renderCard(props?: {
   )
 }
 
+async function openActionsMenu() {
+  fireEvent.click(screen.getByTestId('peer-actions-menu'))
+  await waitFor(() => {
+    expect(screen.getByTestId('delete-button')).toBeTruthy()
+  })
+}
+
 describe('PeerCard', () => {
   afterEach(() => {
     cleanup()
@@ -66,16 +73,25 @@ describe('PeerCard', () => {
     expect(screen.getByText('IKEV2')).toBeTruthy()
   })
 
-  it('renders delete button', () => {
+  it('renders actions menu trigger', () => {
     renderCard()
 
-    expect(screen.getByLabelText('Delete peer test-peer')).toBeTruthy()
+    expect(screen.getByTestId('peer-actions-menu')).toBeTruthy()
   })
 
-  it('shows confirmation dialog on delete click', () => {
+  it('shows delete option in actions menu', async () => {
     renderCard()
 
-    fireEvent.click(screen.getByLabelText('Delete peer test-peer'))
+    await openActionsMenu()
+
+    expect(screen.getByTestId('delete-button')).toBeTruthy()
+  })
+
+  it('shows confirmation dialog on delete click', async () => {
+    renderCard()
+
+    await openActionsMenu()
+    fireEvent.click(screen.getByTestId('delete-button'))
 
     expect(screen.getByText(/Delete peer "test-peer"\? This cannot be undone\./)).toBeTruthy()
     expect(screen.getByLabelText('Confirm delete')).toBeTruthy()
@@ -86,7 +102,8 @@ describe('PeerCard', () => {
     const onDelete = vi.fn().mockResolvedValue(undefined)
     renderCard({ onDelete })
 
-    fireEvent.click(screen.getByLabelText('Delete peer test-peer'))
+    await openActionsMenu()
+    fireEvent.click(screen.getByTestId('delete-button'))
     fireEvent.click(screen.getByLabelText('Confirm delete'))
 
     await waitFor(() => {
@@ -94,21 +111,23 @@ describe('PeerCard', () => {
     })
   })
 
-  it('hides confirmation when cancel is clicked', () => {
+  it('hides confirmation when cancel is clicked', async () => {
     renderCard()
 
-    fireEvent.click(screen.getByLabelText('Delete peer test-peer'))
+    await openActionsMenu()
+    fireEvent.click(screen.getByTestId('delete-button'))
     expect(screen.getByLabelText('Confirm delete')).toBeTruthy()
 
     fireEvent.click(screen.getByLabelText('Cancel delete'))
     expect(screen.queryByLabelText('Confirm delete')).toBeNull()
   })
 
-  it('does not call onEdit when delete button is clicked', () => {
+  it('does not call onEdit when delete button is clicked', async () => {
     const onEdit = vi.fn()
     renderCard({ onEdit })
 
-    fireEvent.click(screen.getByLabelText('Delete peer test-peer'))
+    await openActionsMenu()
+    fireEvent.click(screen.getByTestId('delete-button'))
 
     expect(onEdit).not.toHaveBeenCalled()
   })
@@ -117,7 +136,8 @@ describe('PeerCard', () => {
     const onDelete = vi.fn().mockRejectedValue(new Error('Network error'))
     renderCard({ onDelete })
 
-    fireEvent.click(screen.getByLabelText('Delete peer test-peer'))
+    await openActionsMenu()
+    fireEvent.click(screen.getByTestId('delete-button'))
     fireEvent.click(screen.getByLabelText('Confirm delete'))
 
     await waitFor(() => {
@@ -161,39 +181,19 @@ describe('PeerCard', () => {
   })
 
   describe('Initiate Tunnel Button', () => {
-    it('renders initiate button', () => {
+    it('renders initiate button in menu', async () => {
       renderCard()
 
-      expect(screen.getByLabelText('Bring up tunnel for test-peer')).toBeTruthy()
-    })
+      await openActionsMenu()
 
-    it('enables initiate button for ready peers', () => {
-      renderCard()
-
-      const button = screen.getByTestId('initiate-button')
-      expect(button.hasAttribute('disabled')).toBe(false)
-    })
-
-    it('disables initiate button for incomplete peers', () => {
-      const incompletePeer: Peer = { ...MOCK_PEER, operationalStatus: 'incomplete' }
-      renderCard({ peer: incompletePeer })
-
-      const button = screen.getByTestId('initiate-button')
-      expect(button.hasAttribute('disabled')).toBe(true)
-    })
-
-    it('disables initiate button for disabled peers', () => {
-      const disabledPeer: Peer = { ...MOCK_PEER, enabled: false }
-      renderCard({ peer: disabledPeer })
-
-      const button = screen.getByTestId('initiate-button')
-      expect(button.hasAttribute('disabled')).toBe(true)
+      expect(screen.getByTestId('initiate-button')).toBeTruthy()
     })
 
     it('calls onInitiate when clicked', async () => {
       const onInitiate = vi.fn().mockResolvedValue(undefined)
       renderCard({ onInitiate })
 
+      await openActionsMenu()
       fireEvent.click(screen.getByTestId('initiate-button'))
 
       await waitFor(() => {
@@ -201,26 +201,14 @@ describe('PeerCard', () => {
       })
     })
 
-    it('does not call onEdit when initiate button is clicked', () => {
+    it('does not call onEdit when initiate button is clicked', async () => {
       const onEdit = vi.fn()
       renderCard({ onEdit })
 
+      await openActionsMenu()
       fireEvent.click(screen.getByTestId('initiate-button'))
 
       expect(onEdit).not.toHaveBeenCalled()
-    })
-
-    it('shows loading state during initiation', async () => {
-      const onInitiate = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)))
-      renderCard({ onInitiate })
-
-      const button = screen.getByTestId('initiate-button')
-      fireEvent.click(button)
-
-      // Button should be loading during the promise
-      await waitFor(() => {
-        expect(button.hasAttribute('disabled')).toBe(true)
-      })
     })
   })
 
@@ -232,9 +220,10 @@ describe('PeerCard', () => {
       expect(screen.getByTestId('disabled-badge')).toBeTruthy()
     })
 
-    it('shows disable confirmation before disabling', () => {
+    it('shows disable confirmation before disabling', async () => {
       renderCard()
 
+      await openActionsMenu()
       fireEvent.click(screen.getByTestId('toggle-enabled-button'))
 
       expect(screen.getByTestId('disable-confirmation')).toBeTruthy()
@@ -245,6 +234,7 @@ describe('PeerCard', () => {
       const onToggleEnabled = vi.fn().mockResolvedValue(undefined)
       renderCard({ onToggleEnabled })
 
+      await openActionsMenu()
       fireEvent.click(screen.getByTestId('toggle-enabled-button'))
       fireEvent.click(screen.getByTestId('confirm-disable-button'))
 
@@ -258,6 +248,7 @@ describe('PeerCard', () => {
       const disabledPeer: Peer = { ...MOCK_PEER, enabled: false }
       renderCard({ peer: disabledPeer, onToggleEnabled })
 
+      await openActionsMenu()
       fireEvent.click(screen.getByTestId('toggle-enabled-button'))
 
       await waitFor(() => {

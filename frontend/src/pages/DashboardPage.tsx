@@ -1,11 +1,10 @@
-import { Badge, Box, Button, Container, Heading, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
+import { Badge, Box, Container, Heading, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { InterfaceStatsCard } from '../components/InterfaceStatsCard'
 import { IsolationStatusBanner } from '../components/IsolationStatusBanner'
+import { NavBar } from '../components/NavBar'
 import { TunnelStatusCard } from '../components/TunnelStatusCard'
-import { useAuthStore } from '../state/authStore'
 import { useInterfacesStore } from '../state/interfacesStore'
 import { useSystemStatusStore } from '../state/systemStatus'
 import { useTunnelsStore } from '../state/tunnelsStore'
@@ -13,9 +12,6 @@ import { useTunnelsStore } from '../state/tunnelsStore'
 export function DashboardPage() {
   const { isolationStatus, isLoading, error, loadIsolationStatus, connectIsolationStatusSocket } =
     useSystemStatusStore()
-  const { logout, user } = useAuthStore()
-  const navigate = useNavigate()
-
   const { tunnelStatus, isConnected, connectWebSocket, disconnectWebSocket } = useTunnelsStore()
   const { interfaceStats } = useInterfacesStore()
 
@@ -33,11 +29,6 @@ export function DashboardPage() {
       disconnectWebSocket()
     }
   }, [connectWebSocket, disconnectWebSocket])
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
 
   const tunnelEntries = Object.values(tunnelStatus)
   const statsEntries = Object.entries(interfaceStats)
@@ -73,22 +64,7 @@ export function DashboardPage() {
               >
                 {isConnected ? 'Live' : 'Disconnected'}
               </Badge>
-              <Button onClick={() => navigate('/interfaces')} variant="outline" size="sm">
-                Interfaces
-              </Button>
-              <Button onClick={() => navigate('/peers')} variant="outline" size="sm">
-                Peers
-              </Button>
-              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
-                Routes
-              </Button>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-              >
-                Logout{user ? ` (${user.username})` : ''}
-              </Button>
+              <NavBar />
             </HStack>
           </HStack>
 

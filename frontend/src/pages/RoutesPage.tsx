@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Button,
@@ -11,16 +10,14 @@ import {
   Text,
 } from '@chakra-ui/react'
 
+import { NavBar } from '../components/NavBar'
 import { RouteCard } from '../components/RouteCard'
 import { RouteForm } from '../components/RouteForm'
-import { useAuthStore } from '../state/authStore'
 import { useRoutesStore } from '../state/routesStore'
 import type { RouteCreateRequest, RouteUpdateRequest } from '../state/routesStore'
 
 export function RoutesPage() {
   const { routes, loading, error, fetchRoutes, createRoute, updateRoute, deleteRoute } = useRoutesStore()
-  const { logout, user } = useAuthStore()
-  const navigate = useNavigate()
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingRouteId, setEditingRouteId] = useState<number | null>(null)
@@ -29,11 +26,6 @@ export function RoutesPage() {
   useEffect(() => {
     fetchRoutes()
   }, [fetchRoutes])
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
 
   const handleCreate = async (data: { peerId: string; destinationCidr: string }) => {
     const request: RouteCreateRequest = {
@@ -97,20 +89,7 @@ export function RoutesPage() {
                 Manage traffic routes associated with IPsec peers.
               </Text>
             </Box>
-            <HStack gap={2}>
-              <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
-                Dashboard
-              </Button>
-              <Button onClick={() => navigate('/peers')} variant="outline" size="sm">
-                Peers
-              </Button>
-              <Button onClick={() => navigate('/interfaces')} variant="outline" size="sm">
-                Interfaces
-              </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout{user ? ` (${user.username})` : ''}
-              </Button>
-            </HStack>
+            <NavBar />
           </HStack>
 
           {successMessage && (

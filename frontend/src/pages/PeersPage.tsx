@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Button,
@@ -12,9 +11,9 @@ import {
 } from '@chakra-ui/react'
 import { toaster } from '../components/ui/toaster'
 
+import { NavBar } from '../components/NavBar'
 import { PeerCard } from '../components/PeerCard'
 import { PeerForm } from '../components/PeerForm'
-import { useAuthStore } from '../state/authStore'
 import { usePeersStore } from '../state/peersStore'
 import type { PeerCreateRequest, PeerUpdateRequest } from '../state/peersStore'
 
@@ -22,8 +21,6 @@ const DELETE_SUCCESS_TIMEOUT = 3000
 
 export function PeersPage() {
   const { peers, loading, error, fetchPeers, createPeer, updatePeer, deletePeer, toggleEnabled, initiatePeer } = usePeersStore()
-  const { logout, user } = useAuthStore()
-  const navigate = useNavigate()
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingPeerId, setEditingPeerId] = useState<number | null>(null)
@@ -32,11 +29,6 @@ export function PeersPage() {
   useEffect(() => {
     fetchPeers()
   }, [fetchPeers])
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
 
   const handleCreate = async (data: {
     name: string
@@ -162,20 +154,7 @@ export function PeersPage() {
                 Manage IPsec peers with encrypted pre-shared keys and tunnel parameters.
               </Text>
             </Box>
-            <HStack gap={2}>
-              <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
-                Dashboard
-              </Button>
-              <Button onClick={() => navigate('/interfaces')} variant="outline" size="sm">
-                Interfaces
-              </Button>
-              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
-                Routes
-              </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout{user ? ` (${user.username})` : ''}
-              </Button>
-            </HStack>
+            <NavBar />
           </HStack>
 
           {deleteSuccess && (

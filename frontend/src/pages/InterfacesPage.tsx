@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Button,
@@ -14,7 +13,7 @@ import {
 } from '@chakra-ui/react'
 
 import { InterfaceCard } from '../components/InterfaceCard'
-import { useAuthStore } from '../state/authStore'
+import { NavBar } from '../components/NavBar'
 import { useInterfacesStore } from '../state/interfacesStore'
 
 const IPV4_PATTERN = /^(\d{1,3}\.){3}\d{1,3}$/
@@ -72,8 +71,6 @@ function validateGatewayInSubnet(gateway: string, ipAddress: string, netmask: st
 
 export function InterfacesPage() {
   const { interfaces, loading, error, fetchInterfaces, updateInterface } = useInterfacesStore()
-  const { logout, user } = useAuthStore()
-  const navigate = useNavigate()
 
   const [editingName, setEditingName] = useState<string | null>(null)
   const [formIp, setFormIp] = useState('')
@@ -85,11 +82,6 @@ export function InterfacesPage() {
   useEffect(() => {
     fetchInterfaces()
   }, [fetchInterfaces])
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
 
   const handleConfigure = (name: string) => {
     const iface = interfaces.find((i) => i.name === name)
@@ -158,20 +150,7 @@ export function InterfacesPage() {
                 Configure IP settings for CT, PT, and MGMT network interfaces.
               </Text>
             </Box>
-            <HStack gap={2}>
-              <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
-                Dashboard
-              </Button>
-              <Button onClick={() => navigate('/peers')} variant="outline" size="sm">
-                Peers
-              </Button>
-              <Button onClick={() => navigate('/routes')} variant="outline" size="sm">
-                Routes
-              </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout{user ? ` (${user.username})` : ''}
-              </Button>
-            </HStack>
+            <NavBar />
           </HStack>
 
           {error && (

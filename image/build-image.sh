@@ -457,10 +457,11 @@ install_application() {
     build_frontend
 
     # Copy frontend build (if exists)
+    # Vite outputs directly to backend/static/ (configured in frontend/vite.config.ts)
     mkdir -p "${mnt}/opt/encryptor-sim/backend/static"
-    if [[ -d "${PROJECT_ROOT}/frontend/dist" ]]; then
+    if [[ -d "${PROJECT_ROOT}/backend/static" ]]; then
         log "Copying frontend build..."
-        cp -r "${PROJECT_ROOT}/frontend/dist/." "${mnt}/opt/encryptor-sim/backend/static/"
+        cp -r "${PROJECT_ROOT}/backend/static/." "${mnt}/opt/encryptor-sim/backend/static/"
     else
         log "Warning: frontend build not found, skipping"
     fi

@@ -10,7 +10,6 @@ export function AppToaster() {
     <Toaster toaster={toaster}>
       {(toast) => (
         <Toast.Root>
-          <Toast.Indicator />
           <Stack gap={1} flex="1" maxWidth="100%">
             {toast.title ? <Toast.Title>{toast.title}</Toast.Title> : null}
             {toast.description ? (

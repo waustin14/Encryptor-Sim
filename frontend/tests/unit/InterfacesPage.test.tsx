@@ -79,7 +79,7 @@ describe('InterfacesPage', () => {
   it('renders interface cards for all three interfaces', () => {
     renderPage()
 
-    expect(screen.getByText('Cleartext (CT)')).toBeTruthy()
+    expect(screen.getByText('Ciphertext (CT)')).toBeTruthy()
     expect(screen.getByText('Plaintext (PT)')).toBeTruthy()
     expect(screen.getByText('Management (MGMT)')).toBeTruthy()
   })
@@ -117,7 +117,7 @@ describe('InterfacesPage', () => {
   it('opens configuration form when card is clicked', () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     expect(screen.getByText('Configure CT Interface')).toBeTruthy()
     expect(screen.getByText('Apply Configuration')).toBeTruthy()
@@ -127,7 +127,7 @@ describe('InterfacesPage', () => {
   it('rejects invalid IP address format', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: 'not-an-ip' } })
@@ -144,7 +144,7 @@ describe('InterfacesPage', () => {
   it('rejects IP with octets out of range', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: '256.1.1.1' } })
@@ -161,7 +161,7 @@ describe('InterfacesPage', () => {
   it('rejects reserved 0.0.0.0 address', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: '0.0.0.0' } })
@@ -178,7 +178,7 @@ describe('InterfacesPage', () => {
   it('rejects non-contiguous netmask', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: '192.168.1.1' } })
@@ -195,7 +195,7 @@ describe('InterfacesPage', () => {
   it('rejects invalid gateway format', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
 
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: '192.168.1.1' } })
@@ -212,7 +212,7 @@ describe('InterfacesPage', () => {
   it('closes the form when Cancel is clicked', () => {
     renderPage()
 
-    fireEvent.click(screen.getByText('Cleartext (CT)'))
+    fireEvent.click(screen.getByText('Ciphertext (CT)'))
     expect(screen.getByText('Configure CT Interface')).toBeTruthy()
 
     fireEvent.click(screen.getByText('Cancel'))
