@@ -20,10 +20,10 @@ SSL_KEYFILE="/etc/encryptor-sim/tls/server.key"
 command="/sbin/ip"
 command_args="netns exec ns_mgmt /usr/bin/python3 /opt/encryptor-sim/backend/uvicorn_server.py"
 command_background="yes"
-start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
 
 directory="/opt/encryptor-sim/backend"
 pidfile="/run/${RC_SVCNAME}.pid"
+start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
 output_log="/var/log/encryptor-sim/api.log"
 error_log="/var/log/encryptor-sim/api.error.log"
 

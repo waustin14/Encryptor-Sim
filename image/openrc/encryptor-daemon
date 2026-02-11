@@ -16,10 +16,10 @@ command="/usr/bin/python3"
 command_args="-m daemon.main"
 command_background="yes"
 command_user="root"
-start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
 
 directory="/opt/encryptor-sim/backend"
 pidfile="/run/${RC_SVCNAME}.pid"
+start_stop_daemon_args="--make-pidfile --pidfile ${pidfile}"
 output_log="/var/log/encryptor-sim/daemon.log"
 error_log="/var/log/encryptor-sim/daemon.error.log"
 
@@ -96,6 +96,22 @@ start_pre() {
     fi
 
     return 0
+}
+
+start() {
+    ebegin "Starting encryptor-daemon"
+    start-stop-daemon --start --background \
+        --make-pidfile --pidfile "$pidfile" \
+        --chdir "$directory" \
+        --stdout "$output_log" --stderr "$error_log" \
+        --exec /usr/bin/python3 -- -m daemon.main
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping encryptor-daemon"
+    start-stop-daemon --stop --pidfile "$pidfile"
+    eend $?
 }
 
 stop_post() {
