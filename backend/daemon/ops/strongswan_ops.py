@@ -262,21 +262,21 @@ def initiate_peer(
         Status dict with result details.
     """
     load_warning: str | None = None
-    # Optionally reload connections to ensure latest config is loaded (Task 1.2)
+    # Reload connections and credentials to ensure latest config is loaded
     if load_conns_first:
         try:
             runner(
-                _swanctl_cmd("--load-conns"),
+                _swanctl_cmd("--load-all"),
                 capture_output=True,
                 text=True,
                 timeout=5,
             )
         except subprocess.TimeoutExpired:
-            load_warning = "swanctl --load-conns timed out"
+            load_warning = "swanctl --load-all timed out"
         except FileNotFoundError:
-            load_warning = "swanctl not available; skipping load-conns"
+            load_warning = "swanctl not available; skipping load-all"
         except Exception as e:
-            load_warning = f"swanctl --load-conns failed: {e}"
+            load_warning = f"swanctl --load-all failed: {e}"
 
     safe_name = _sanitize_name(name)
     try:
@@ -560,9 +560,9 @@ def reload_peer_config(
     *,
     runner: Runner = subprocess.run,
 ) -> dict[str, str]:
-    """Reload peer connections without restarting tunnels.
+    """Reload peer connections and credentials without restarting tunnels.
 
-    Uses swanctl --load-conns to reload configuration.
+    Uses swanctl --load-all to reload connections and secrets.
 
     Args:
         name: Peer name (for logging).
@@ -573,32 +573,32 @@ def reload_peer_config(
     """
     try:
         result = runner(
-            _swanctl_cmd("--load-conns"),
+            _swanctl_cmd("--load-all"),
             capture_output=True,
             text=True,
             timeout=5,
         )
         if result.returncode == 0:
-            logger.info(f"Reloaded connections after route update for {name}")
+            logger.info(f"Reloaded configuration after route update for {name}")
             return {
                 "status": "success",
-                "message": f"Connections reloaded for peer {name}",
+                "message": f"Configuration reloaded for peer {name}",
             }
         logger.warning(
-            f"Connection reload returned code {result.returncode}: {result.stderr.strip()}"
+            f"Configuration reload returned code {result.returncode}: {result.stderr.strip()}"
         )
         return {
             "status": "success",
-            "message": f"Connection reload returned code {result.returncode}",
+            "message": f"Configuration reload returned code {result.returncode}",
         }
     except subprocess.TimeoutExpired:
-        logger.warning("Connection reload timed out")
+        logger.warning("Configuration reload timed out")
         return {
             "status": "success",
-            "message": "Connection reload timed out, proceeding",
+            "message": "Configuration reload timed out, proceeding",
         }
     except FileNotFoundError:
-        logger.warning("swanctl not found, skipping connection reload")
+        logger.warning("swanctl not found, skipping configuration reload")
         return {
             "status": "success",
             "message": "swanctl not available, skipping reload",

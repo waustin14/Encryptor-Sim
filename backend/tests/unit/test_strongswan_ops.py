@@ -268,8 +268,8 @@ class TestInitiatePeer:
             return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
         initiate_peer(name="cmd-peer", runner=mock_runner)
-        # Should call load-conns first, then initiate (both in ns_ct namespace)
-        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--load-conns"]
+        # Should call load-all first, then initiate (both in ns_ct namespace)
+        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--load-all"]
         assert called_with[1] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--initiate", "--child", "cmd-peer-child"]
 
 
@@ -905,6 +905,7 @@ class TestSpacesInPeerName:
             return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
         initiate_peer(name="Site A", runner=mock_runner)
+        assert called_with[0] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--load-all"]
         assert called_with[1] == ["ip", "netns", "exec", "ns_ct", "swanctl", "--initiate", "--child", "Site_A-child"]
 
     def test_teardown_uses_sanitized_child_name(self) -> None:
