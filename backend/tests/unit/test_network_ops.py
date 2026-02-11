@@ -138,6 +138,37 @@ class TestConfigureInterface:
         assert result["namespace"] == "ns_pt"
         assert result["device"] == "eth2"
 
+    def test_configure_pt_adds_default_ns_route(self, tmp_path):
+        """Verify PT config adds a route for the PT subnet in the default namespace."""
+        runner = self._make_runner()
+        configure_interface(
+            "PT", "10.0.0.1", "255.255.255.0", "10.0.0.254",
+            runner=runner, config_base_dir=str(tmp_path),
+        )
+        calls = runner.call_args_list
+        # Find the route replace call in the default namespace (no "netns exec")
+        pt_route_calls = [
+            c for c in calls
+            if "route" in c[0][0] and "replace" in c[0][0]
+            and "10.0.0.0/24" in c[0][0] and "169.254.0.2" in c[0][0]
+        ]
+        assert len(pt_route_calls) == 1
+
+    def test_configure_ct_does_not_add_pt_route(self, tmp_path):
+        """Verify CT config does NOT add a PT subnet route."""
+        runner = self._make_runner()
+        configure_interface(
+            "CT", "192.168.10.1", "255.255.255.0", "192.168.10.254",
+            runner=runner, config_base_dir=str(tmp_path),
+        )
+        calls = runner.call_args_list
+        pt_route_calls = [
+            c for c in calls
+            if "route" in c[0][0] and "replace" in c[0][0]
+            and "169.254.0.2" in c[0][0]
+        ]
+        assert len(pt_route_calls) == 0
+
     def test_configure_mgmt_calls_correct_namespace(self, tmp_path):
         """Verify MGMT config uses ns_mgmt namespace."""
         runner = self._make_runner()

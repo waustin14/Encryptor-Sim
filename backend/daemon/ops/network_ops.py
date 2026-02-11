@@ -136,6 +136,16 @@ def configure_interface(
         capture_output=True,
     )
 
+    # Add route for the PT subnet in the default namespace via the veth pair,
+    # so traffic arriving on xfrm interfaces can reach ns_pt.
+    if name_upper == "PT":
+        network = ipaddress.IPv4Network(f"{ip_address}/{netmask}", strict=False)
+        runner(
+            ["ip", "route", "replace", str(network), "via", "169.254.0.2"],
+            check=True,
+            capture_output=True,
+        )
+
     # Write persistent configuration file
     write_netns_config(
         namespace, device, ip_address, netmask, gateway,
@@ -222,6 +232,34 @@ def write_netns_config(
 
     logger.info(f"Wrote and verified network config: {config_path}")
     return config_path
+
+
+def get_pt_subnet() -> str | None:
+    """Get the PT interface subnet in CIDR notation from the database.
+
+    Returns:
+        Network CIDR string (e.g. "10.0.0.0/24") or None if PT is unconfigured.
+    """
+    from backend.app.config import get_settings
+    from backend.app.db.session import create_session_factory
+    from backend.app.models.interface import Interface
+
+    try:
+        settings = get_settings()
+        session_factory = create_session_factory(settings.database_url)
+        session = session_factory()
+        try:
+            pt = session.query(Interface).filter(Interface.name == "PT").first()
+            if pt and pt.ipAddress and pt.netmask:
+                network = ipaddress.IPv4Network(
+                    f"{pt.ipAddress}/{pt.netmask}", strict=False
+                )
+                return str(network)
+            return None
+        finally:
+            session.close()
+    except Exception:
+        return None
 
 
 def _parse_proc_net_dev(output: str, device: str) -> dict[str, int]:

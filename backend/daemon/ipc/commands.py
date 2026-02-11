@@ -135,9 +135,19 @@ def handle_command(command: str, payload: Mapping[str, Any] | None = None) -> di
         if missing:
             raise CommandError(f"Missing required fields: {', '.join(missing)}")
 
+        # Look up local PT subnet for local_ts traffic selector
+        local_subnet = None
+        try:
+            from backend.daemon.ops.network_ops import get_pt_subnet
+
+            local_subnet = get_pt_subnet()
+        except Exception:
+            pass  # Best-effort; logged by network_ops
+
         result = write_routes_config(
             name=payload["peer_name"],
             routes=list(payload["routes"]),
+            local_subnet=local_subnet,
         )
 
         # Reload connections to apply route changes

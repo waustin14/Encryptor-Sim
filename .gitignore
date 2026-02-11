@@ -10,6 +10,7 @@ _bmad-output/
 .claude/
 .codex/
 scripts/.claude/
+image/output/
 *.db
 *.db-journal
 *.db-shm
