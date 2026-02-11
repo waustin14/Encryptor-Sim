@@ -166,6 +166,8 @@ connections {{
 
 secrets {{
     ike-{safe_name} {{
+        id-a = %any
+        id-b = {remote_ip}
         secret = "{psk}"
     }}
 }}
